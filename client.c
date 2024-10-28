@@ -12,10 +12,14 @@
 int sock;
 GtkTextBuffer *text_buffer;
 const char *username; // Переменная для хранения имени пользователя
+GtkWidget *login_window; // Хранение окна логина для доступа из других функций
 
 // Прототипы функций
 void create_chat_window();
+void create_login_window();
+void create_registration_window();
 
+// Функция для получения сообщений от сервера
 void *receive_messages(void *arg) {
     char buffer[BUFFER_SIZE];
 
@@ -23,9 +27,14 @@ void *receive_messages(void *arg) {
         memset(buffer, 0, BUFFER_SIZE);
         int bytes_read = read(sock, buffer, BUFFER_SIZE);
         if (bytes_read > 0) {
-            // Отображаем сообщение от другого пользователя
-            gtk_text_buffer_insert_at_cursor(text_buffer, buffer, -1);
-            gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1); // Добавляем новую строку
+            // Проверка на валидность текста в формате UTF-8
+            if (g_utf8_validate(buffer, bytes_read, NULL)) {
+                // Отображаем сообщение от другого пользователя
+                gtk_text_buffer_insert_at_cursor(text_buffer, buffer, -1);
+                gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1); // Добавляем новую строку
+            } else {
+                fprintf(stderr, "Received invalid UTF-8 message: %.*s\n", bytes_read, buffer);
+            }
         } else {
             break; // Соединение закрыто
         }
@@ -36,40 +45,58 @@ void *receive_messages(void *arg) {
 void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     const gchar *message = gtk_entry_get_text(GTK_ENTRY(user_data));
     if (strlen(message) > 0) {
-        // Форматируем сообщение перед отправкой
-        char formatted_message[BUFFER_SIZE];
-        snprintf(formatted_message, sizeof(formatted_message), "%s: %s", username, message);
-        send(sock, formatted_message, strlen(formatted_message), 0);
+        // Отправляем сообщение в сыром виде, без имени пользователя
+        send(sock, message, strlen(message), 0);
 
         // Отображаем отправленное сообщение в окне чата
         char display_message[BUFFER_SIZE];
         snprintf(display_message, sizeof(display_message), "You: %s", message);
-        gtk_text_buffer_insert_at_cursor(text_buffer, display_message, -1);
-        gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1); // Добавляем новую строку
+
+        // Проверка на валидность текста в формате UTF-8 перед вставкой
+        if (g_utf8_validate(display_message, -1, NULL)) {
+            gtk_text_buffer_insert_at_cursor(text_buffer, display_message, -1);
+            gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1); // Добавляем новую строку
+        } else {
+            fprintf(stderr, "Invalid UTF-8 message: %s\n", display_message);
+        }
+
         gtk_entry_set_text(GTK_ENTRY(user_data), ""); // Очищаем поле ввода
     }
 }
 
+// Функция для обработки входа пользователя
 void on_login_button_clicked(GtkButton *button, gpointer user_data) {
     username = gtk_entry_get_text(GTK_ENTRY(user_data)); // Сохраняем имя пользователя
-    // Логика отправки имени пользователя на сервер для аутентификации
-    send(sock, username, strlen(username), 0);
-    // Переход к чату после входа
-    create_chat_window();
+    send(sock, username, strlen(username), 0); // Отправляем имя на сервер
+    gtk_widget_hide(login_window); // Скрываем окно логина
+    create_chat_window(); // Переход к чату после входа
 }
 
+// Функция для обработки нажатия кнопки "Назад" в окне регистрации
+void on_back_button_clicked(GtkButton *button, gpointer user_data) {
+    gtk_widget_hide(user_data); // Скрываем окно регистрации
+    gtk_widget_show(login_window); // Показываем окно логина
+}
+
+// Функция для обработки регистрации пользователя
+void on_register_button_clicked(GtkButton *button, gpointer user_data) {
+    gtk_widget_hide(login_window); // Скрываем окно логина
+    create_registration_window(); // Открываем окно регистрации
+}
+
+// Функция для создания окна входа
 void create_login_window() {
-    GtkWidget *window;
     GtkWidget *vbox;
     GtkWidget *entry;
     GtkWidget *login_button;
+    GtkWidget *register_button;
 
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Login");
-    gtk_window_set_default_size(GTK_WINDOW(window), 300, 100);
+    login_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(login_window), "Login");
+    gtk_window_set_default_size(GTK_WINDOW(login_window), 300, 150);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_add(GTK_CONTAINER(window), vbox);
+    gtk_container_add(GTK_CONTAINER(login_window), vbox);
 
     entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "Enter username");
@@ -79,10 +106,15 @@ void create_login_window() {
     g_signal_connect(login_button, "clicked", G_CALLBACK(on_login_button_clicked), entry);
     gtk_box_pack_start(GTK_BOX(vbox), login_button, TRUE, TRUE, 0);
 
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    gtk_widget_show_all(window);
+    register_button = gtk_button_new_with_label("Register");
+    g_signal_connect(register_button, "clicked", G_CALLBACK(on_register_button_clicked), NULL);
+    gtk_box_pack_start(GTK_BOX(vbox), register_button, TRUE, TRUE, 0);
+
+    g_signal_connect(login_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    gtk_widget_show_all(login_window);
 }
 
+// Функция для создания окна чата
 void create_chat_window() {
     GtkWidget *window;
     GtkWidget *vbox;
@@ -110,6 +142,44 @@ void create_chat_window() {
     gtk_box_pack_start(GTK_BOX(vbox), send_button, FALSE, FALSE, 0);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    gtk_widget_show_all(window);
+}
+
+// Функция для создания окна регистрации
+void create_registration_window() {
+    GtkWidget *window;
+    GtkWidget *vbox;
+    GtkWidget *username_entry;
+    GtkWidget *password_entry;
+    GtkWidget *register_button;
+    GtkWidget *back_button;
+
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Register");
+    gtk_window_set_default_size(GTK_WINDOW(window), 300, 200);
+
+    vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_add(GTK_CONTAINER(window), vbox);
+
+    username_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(username_entry), "Enter username");
+    gtk_box_pack_start(GTK_BOX(vbox), username_entry, TRUE, TRUE, 0);
+
+    password_entry = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(password_entry), "Enter password");
+    gtk_entry_set_visibility(GTK_ENTRY(password_entry), FALSE); // Скрыть ввод пароля
+    gtk_box_pack_start(GTK_BOX(vbox), password_entry, TRUE, TRUE, 0);
+
+    register_button = gtk_button_new_with_label("Register");
+    // Добавьте логику отправки данных на сервер в функции обработки нажатия
+    g_signal_connect(register_button, "clicked", G_CALLBACK(on_login_button_clicked), username_entry);
+    gtk_box_pack_start(GTK_BOX(vbox), register_button, TRUE, TRUE, 0);
+
+    back_button = gtk_button_new_with_label("Back");
+    g_signal_connect(back_button, "clicked", G_CALLBACK(on_back_button_clicked), window);
+    gtk_box_pack_start(GTK_BOX(vbox), back_button, TRUE, TRUE, 0);
+
+    g_signal_connect(window, "destroy", G_CALLBACK(gtk_widget_destroy), NULL);
     gtk_widget_show_all(window);
 }
 
@@ -148,4 +218,3 @@ int main(int argc, char **argv) {
     close(sock);
     return 0;
 }
-
