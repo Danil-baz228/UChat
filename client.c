@@ -36,10 +36,8 @@ void *receive_messages(void *arg) {
 void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     const gchar *message = gtk_entry_get_text(GTK_ENTRY(user_data));
     if (strlen(message) > 0) {
-        // Форматируем сообщение перед отправкой
-        char formatted_message[BUFFER_SIZE];
-        snprintf(formatted_message, sizeof(formatted_message), "%s: %s", username, message);
-        send(sock, formatted_message, strlen(formatted_message), 0);
+        // Отправляем сообщение в сыром виде, без имени пользователя
+        send(sock, message, strlen(message), 0);
 
         // Отображаем отправленное сообщение в окне чата
         char display_message[BUFFER_SIZE];
@@ -50,11 +48,13 @@ void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     }
 }
 
+
 void on_login_button_clicked(GtkButton *button, gpointer user_data) {
     username = gtk_entry_get_text(GTK_ENTRY(user_data)); // Сохраняем имя пользователя
     // Логика отправки имени пользователя на сервер для аутентификации
     send(sock, username, strlen(username), 0);
     // Переход к чату после входа
+
     create_chat_window();
 }
 
