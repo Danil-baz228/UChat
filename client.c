@@ -40,15 +40,18 @@ void *receive_messages(void *arg) {
 void on_send_button_clicked(GtkButton *button, gpointer user_data) {
     const gchar *message = gtk_entry_get_text(GTK_ENTRY(user_data));
     if (strlen(message) > 0) {
-        // Отправляем сообщение в сыром виде, без имени пользователя
         send(sock, message, strlen(message), 0);
 
-        // Отображаем отправленное сообщение в окне чата
-        char display_message[BUFFER_SIZE];
-        snprintf(display_message, sizeof(display_message), "You: %s", message);
-        gtk_text_buffer_insert_at_cursor(text_buffer, display_message, -1);
-        gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1); // Добавляем новую строку
-        gtk_entry_set_text(GTK_ENTRY(user_data), ""); // Очищаем поле ввода
+        if (text_buffer != NULL) {  // Проверка на инициализацию text_buffer
+            char display_message[BUFFER_SIZE];
+            snprintf(display_message, sizeof(display_message), "You: %s", message);
+            gtk_text_buffer_insert_at_cursor(text_buffer, display_message, -1);
+            gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1);
+        } else {
+            g_warning("Text buffer not initialized.");
+        }
+
+        gtk_entry_set_text(GTK_ENTRY(user_data), ""); // Очистка поля ввода
     }
 }
 

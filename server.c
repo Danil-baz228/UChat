@@ -52,7 +52,7 @@ void *handle_client(void *arg) {
         memset(buffer, 0, BUFFER_SIZE);
         int bytes_read = read(client->socket, buffer, BUFFER_SIZE);
         if (bytes_read <= 0) {
-            break; // Клиент отключился
+            break; // Клиент отключилсяs
         }
 
         int username_length = strlen(client->username);
