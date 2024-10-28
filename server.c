@@ -18,10 +18,35 @@ Client *clients[MAX_CLIENTS];
 int client_count = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void broadcast_message(const char *message, Client *sender) {
+    pthread_mutex_lock(&clients_mutex);
+    for (int i = 0; i < client_count; i++) {
+        if (clients[i] != sender) {
+            send(clients[i]->socket, message, strlen(message), 0);
+        }
+    }
+    pthread_mutex_unlock(&clients_mutex);
+}
+
+void notify_user_connected(Client *client) {
+    char notification[BUFFER_SIZE];
+    snprintf(notification, sizeof(notification), "USER_CONNECTED:%s", client->username);
+    broadcast_message(notification, NULL);
+}
+
+void notify_user_disconnected(Client *client) {
+    char notification[BUFFER_SIZE];
+    snprintf(notification, sizeof(notification), "USER_DISCONNECTED:%s", client->username);
+    broadcast_message(notification, NULL);
+}
+
 void *handle_client(void *arg) {
     Client *client = (Client *)arg;
     char buffer[BUFFER_SIZE];
-    char msg[BUFFER_SIZE + 50]; // Увеличиваем размер на 50 для никнейма и дополнительных символов
+    char msg[BUFFER_SIZE + 50];
+
+    // Уведомляем всех клиентов о подключении нового пользователя
+    notify_user_connected(client);
 
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
@@ -30,26 +55,19 @@ void *handle_client(void *arg) {
             break; // Клиент отключился
         }
 
-        // Проверяем на переполнение
         int username_length = strlen(client->username);
-        int message_length = bytes_read; // длина сообщения от клиента
-        if (username_length + message_length + 2 > sizeof(msg)) { // +2 для ": " и '\0'
+        int message_length = bytes_read;
+        if (username_length + message_length + 2 > sizeof(msg)) {
             fprintf(stderr, "Message too long from user: %s\n", client->username);
-            continue; // Игнорируем это сообщение
+            continue;
         }
 
-        // Формируем сообщение
         snprintf(msg, sizeof(msg), "%s: %.*s", client->username, message_length, buffer);
-
-        // Пересылаем сообщение всем клиентам, кроме отправителя
-        pthread_mutex_lock(&clients_mutex);
-        for (int i = 0; i < client_count; i++) {
-            if (clients[i] != client) {
-                send(clients[i]->socket, msg, strlen(msg), 0);
-            }
-        }
-        pthread_mutex_unlock(&clients_mutex);
+        broadcast_message(msg, client);
     }
+
+    // Уведомляем всех клиентов об отключении пользователя
+    notify_user_disconnected(client);
 
     // Удаляем клиента из списка
     pthread_mutex_lock(&clients_mutex);
@@ -61,8 +79,9 @@ void *handle_client(void *arg) {
         }
     }
     pthread_mutex_unlock(&clients_mutex);
+
     close(client->socket);
-    free(client); // Освобождаем память для клиента
+    free(client);
     return NULL;
 }
 
@@ -72,13 +91,11 @@ int main() {
     int opt = 1;
     int addrlen = sizeof(address);
 
-    // Создание сокета
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("Socket failed");
         exit(EXIT_FAILURE);
     }
 
-    // Привязываем сокет к порту
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
         perror("Set socket option failed");
         exit(EXIT_FAILURE);
@@ -88,13 +105,11 @@ int main() {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
 
-    // Привязка сокета
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("Bind failed");
         exit(EXIT_FAILURE);
     }
 
-    // Начинаем прослушивание подключений
     if (listen(server_fd, MAX_CLIENTS) < 0) {
         perror("Listen failed");
         exit(EXIT_FAILURE);
@@ -109,23 +124,19 @@ int main() {
                 exit(EXIT_FAILURE);
             }
 
-            // Создаем нового клиента
             Client *client = malloc(sizeof(Client));
             client->socket = new_socket;
 
-            // Получаем имя пользователя
             read(new_socket, client->username, sizeof(client->username));
             printf("User '%s' has connected.\n", client->username);
 
-            // Добавляем нового клиента в массив клиентов
             pthread_mutex_lock(&clients_mutex);
             clients[client_count++] = client;
             pthread_mutex_unlock(&clients_mutex);
 
-            // Создаем новый поток для клиента
             pthread_t tid;
             pthread_create(&tid, NULL, handle_client, (void *)client);
-            pthread_detach(tid); // Отключаем поток, чтобы ресурсы освобождались при его завершении
+            pthread_detach(tid);
         }
     }
 
