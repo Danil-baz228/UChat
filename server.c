@@ -7,28 +7,45 @@
 
 #define PORT 8080
 #define BUFFER_SIZE 1024
-#define MAX_CLIENTS 2
+#define MAX_CLIENTS 10
 
-int clients[MAX_CLIENTS];
+typedef struct {
+    int socket;
+    char username[50];
+} Client;
+
+Client *clients[MAX_CLIENTS];
 int client_count = 0;
 pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void *handle_client(void *arg) {
-    int client_socket = *(int *)arg;
+    Client *client = (Client *)arg;
     char buffer[BUFFER_SIZE];
+    char msg[BUFFER_SIZE + 50]; // Увеличиваем размер на 50 для никнейма и дополнительных символов
 
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
-        int bytes_read = read(client_socket, buffer, BUFFER_SIZE);
+        int bytes_read = read(client->socket, buffer, BUFFER_SIZE);
         if (bytes_read <= 0) {
             break; // Клиент отключился
         }
 
+        // Проверяем на переполнение
+        int username_length = strlen(client->username);
+        int message_length = bytes_read; // длина сообщения от клиента
+        if (username_length + message_length + 2 > sizeof(msg)) { // +2 для ": " и '\0'
+            fprintf(stderr, "Message too long from user: %s\n", client->username);
+            continue; // Игнорируем это сообщение
+        }
+
+        // Формируем сообщение
+        snprintf(msg, sizeof(msg), "%s: %.*s", client->username, message_length, buffer);
+
         // Пересылаем сообщение всем клиентам, кроме отправителя
         pthread_mutex_lock(&clients_mutex);
         for (int i = 0; i < client_count; i++) {
-            if (clients[i] != client_socket) {
-                send(clients[i], buffer, bytes_read, 0);
+            if (clients[i] != client) {
+                send(clients[i]->socket, msg, strlen(msg), 0);
             }
         }
         pthread_mutex_unlock(&clients_mutex);
@@ -37,14 +54,15 @@ void *handle_client(void *arg) {
     // Удаляем клиента из списка
     pthread_mutex_lock(&clients_mutex);
     for (int i = 0; i < client_count; i++) {
-        if (clients[i] == client_socket) {
+        if (clients[i] == client) {
             clients[i] = clients[client_count - 1];
             client_count--;
             break;
         }
     }
     pthread_mutex_unlock(&clients_mutex);
-    close(client_socket);
+    close(client->socket);
+    free(client); // Освобождаем память для клиента
     return NULL;
 }
 
@@ -91,15 +109,23 @@ int main() {
                 exit(EXIT_FAILURE);
             }
 
+            // Создаем нового клиента
+            Client *client = malloc(sizeof(Client));
+            client->socket = new_socket;
+
+            // Получаем имя пользователя
+            read(new_socket, client->username, sizeof(client->username));
+            printf("User '%s' has connected.\n", client->username);
+
             // Добавляем нового клиента в массив клиентов
             pthread_mutex_lock(&clients_mutex);
-            clients[client_count++] = new_socket;
+            clients[client_count++] = client;
             pthread_mutex_unlock(&clients_mutex);
 
             // Создаем новый поток для клиента
             pthread_t tid;
-            pthread_create(&tid, NULL, handle_client, (void *)&new_socket);
-            pthread_detach(tid);  // Отключаем поток, чтобы ресурсы освобождались при его завершении
+            pthread_create(&tid, NULL, handle_client, (void *)client);
+            pthread_detach(tid); // Отключаем поток, чтобы ресурсы освобождались при его завершении
         }
     }
 
