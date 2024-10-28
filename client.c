@@ -12,6 +12,7 @@
 int sock;
 GtkTextBuffer *text_buffer;
 const char *username; // Переменная для хранения имени пользователя
+GtkWidget *login_window; // Окно логина
 
 // Прототипы функций
 void create_chat_window();
@@ -51,10 +52,14 @@ void on_send_button_clicked(GtkButton *button, gpointer user_data) {
 
 void on_login_button_clicked(GtkButton *button, gpointer user_data) {
     username = gtk_entry_get_text(GTK_ENTRY(user_data)); // Сохраняем имя пользователя
-    // Логика отправки имени пользователя на сервер для аутентификации
-    send(sock, username, strlen(username), 0);
-    // Переход к чату после входа
 
+    // Отправляем имя пользователя на сервер для аутентификации
+    send(sock, username, strlen(username), 0);
+
+    // Скрываем окно логина
+    gtk_widget_hide(login_window);
+
+    // Создаем окно чата
     create_chat_window();
 }
 
@@ -64,12 +69,12 @@ void create_login_window() {
     GtkWidget *entry;
     GtkWidget *login_button;
 
-    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Login");
-    gtk_window_set_default_size(GTK_WINDOW(window), 300, 100);
+    login_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(login_window), "Login");
+    gtk_window_set_default_size(GTK_WINDOW(login_window), 300, 100);
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_container_add(GTK_CONTAINER(window), vbox);
+    gtk_container_add(GTK_CONTAINER(login_window), vbox);
 
     entry = gtk_entry_new();
     gtk_entry_set_placeholder_text(GTK_ENTRY(entry), "Enter username");
@@ -79,8 +84,8 @@ void create_login_window() {
     g_signal_connect(login_button, "clicked", G_CALLBACK(on_login_button_clicked), entry);
     gtk_box_pack_start(GTK_BOX(vbox), login_button, TRUE, TRUE, 0);
 
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-    gtk_widget_show_all(window);
+    g_signal_connect(login_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+    gtk_widget_show_all(login_window);
 }
 
 void create_chat_window() {
@@ -92,7 +97,7 @@ void create_chat_window() {
 
     window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Chat");
-    gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
+    gtk_window_set_default_size(GTK_WINDOW(window), 600, 400); // Увеличиваем размер окна
 
     vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_container_add(GTK_CONTAINER(window), vbox);
@@ -148,4 +153,3 @@ int main(int argc, char **argv) {
     close(sock);
     return 0;
 }
-
