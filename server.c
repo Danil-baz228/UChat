@@ -26,6 +26,7 @@ void broadcast_message(const char *message, Client *sender) {
         }
     }
     pthread_mutex_unlock(&clients_mutex);
+
 }
 
 void notify_user_connected(Client *client) {
