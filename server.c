@@ -124,6 +124,7 @@ int main() {
                 exit(EXIT_FAILURE);
             }
 
+
             Client *client = malloc(sizeof(Client));
             client->socket = new_socket;
 

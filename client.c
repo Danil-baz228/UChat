@@ -119,6 +119,7 @@ void open_emoji_popover(GtkWidget *button, gpointer entry) {
     GtkWidget *emoji_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_container_add(GTK_CONTAINER(popover), emoji_box);
 
+
     // Массив смайликов для выбора
     const char *emojis[] = {"😀", "😂", "❤️", "👍", "🎉", "😊", "😎", "🤔", "😢", "🎈"};
 
