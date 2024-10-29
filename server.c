@@ -55,6 +55,7 @@ void *handle_client(void *arg) {
             break; // Клиент отключился
         }
 
+        // Проверяем на переполнение
         int username_length = strlen(client->username);
         int message_length = bytes_read;
         if (username_length + message_length + 2 > sizeof(msg)) {
@@ -62,6 +63,7 @@ void *handle_client(void *arg) {
             continue;
         }
 
+        // Формируем сообщение
         snprintf(msg, sizeof(msg), "%s: %.*s", client->username, message_length, buffer);
         broadcast_message(msg, client);
     }
@@ -91,11 +93,13 @@ int main() {
     int opt = 1;
     int addrlen = sizeof(address);
 
+    // Создание сокета
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("Socket failed");
         exit(EXIT_FAILURE);
     }
 
+    // Привязываем сокет к порту
     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
         perror("Set socket option failed");
         exit(EXIT_FAILURE);
@@ -105,11 +109,13 @@ int main() {
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(PORT);
 
+    // Привязка сокета
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("Bind failed");
         exit(EXIT_FAILURE);
     }
 
+    // Начинаем прослушивание подключений
     if (listen(server_fd, MAX_CLIENTS) < 0) {
         perror("Listen failed");
         exit(EXIT_FAILURE);
@@ -128,13 +134,16 @@ int main() {
             Client *client = malloc(sizeof(Client));
             client->socket = new_socket;
 
+            // Получаем имя пользователя
             read(new_socket, client->username, sizeof(client->username));
             printf("User '%s' has connected.\n", client->username);
 
+            // Добавляем нового клиента в массив клиентов
             pthread_mutex_lock(&clients_mutex);
             clients[client_count++] = client;
             pthread_mutex_unlock(&clients_mutex);
 
+            // Создаем новый поток для клиента
             pthread_t tid;
             pthread_create(&tid, NULL, handle_client, (void *)client);
             pthread_detach(tid);
@@ -144,3 +153,4 @@ int main() {
     close(server_fd);
     return 0;
 }
+
