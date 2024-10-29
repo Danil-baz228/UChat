@@ -23,10 +23,11 @@ void update_client_list(const gchar *username, gboolean is_connected);
 void on_send_button_clicked(GtkButton *button, gpointer user_data);
 void on_emoji_selected(GtkButton *button, gpointer entry);  // Обработчик для вставки эмодзи
 void open_emoji_popover(GtkWidget *button, gpointer entry);
-
+void on_exit_button_clicked(GtkButton *button, gpointer user_data); // Добавлен прототип
+void *receive_messages(void *arg); // Добавлен прототип
 
 void create_chat_window() {
-    GtkWidget *vbox, *hbox, *text_view, *entry, *send_button, *emoji_button;
+    GtkWidget *vbox, *hbox, *text_view, *entry, *send_button, *emoji_button, *exit_button;
 
     chat_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(chat_window), "Chat");
@@ -50,19 +51,40 @@ void create_chat_window() {
     g_signal_connect(send_button, "clicked", G_CALLBACK(on_send_button_clicked), entry);
     gtk_box_pack_start(GTK_BOX(vbox), send_button, FALSE, FALSE, 0);
 
-    // Кнопка для открытия выпадающего списка со смайликами
     emoji_button = gtk_button_new_with_label("😊");
     g_signal_connect(emoji_button, "clicked", G_CALLBACK(open_emoji_popover), entry);
     gtk_box_pack_start(GTK_BOX(vbox), emoji_button, FALSE, FALSE, 0);
 
-    // Панель для отображения списка клиентов
     client_list = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     GtkWidget *client_list_label = gtk_label_new("Connected Users:");
     gtk_box_pack_start(GTK_BOX(client_list), client_list_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), client_list, FALSE, FALSE, 0);
 
+    // Кнопка "Exit" для выхода в меню логина
+    exit_button = gtk_button_new_with_label("Exit");
+    g_signal_connect(exit_button, "clicked", G_CALLBACK(on_exit_button_clicked), NULL);
+    gtk_box_pack_start(GTK_BOX(vbox), exit_button, FALSE, FALSE, 0);
+
     g_signal_connect(chat_window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     gtk_widget_show_all(chat_window);
+}
+
+void on_exit_button_clicked(GtkButton *button, gpointer user_data) {
+    // Отправляем серверу сообщение о дисконнекте
+    char disconnect_msg[BUFFER_SIZE];
+    snprintf(disconnect_msg, sizeof(disconnect_msg), "USER_EXIT:%s", username); // Используем USER_EXIT
+    send(sock, disconnect_msg, strlen(disconnect_msg), 0);
+
+    // Закрываем текущий сокет
+    close(sock);
+
+    // Скрываем окно чата и открываем окно входа
+    gtk_widget_hide(chat_window);
+    create_login_window();
+
+    // Запускаем поток получения сообщений для нового соединения
+    pthread_t receive_thread;
+    pthread_create(&receive_thread, NULL, receive_messages, NULL);
 }
 
 void open_emoji_popover(GtkWidget *button, gpointer entry) {
@@ -93,23 +115,18 @@ void *receive_messages(void *arg) {
         int bytes_read = read(sock, buffer, BUFFER_SIZE);
         if (bytes_read > 0) {
             buffer[bytes_read] = '\0';
-            printf("Received from server: %s\n", buffer);
 
-            if (strncmp(buffer, "USER_CONNECTED:", 15) == 0) {
-                const char *username = buffer + 15;
-                printf("User connected: %s\n", username);
-                update_client_list(username, TRUE);
-            } else if (strncmp(buffer, "USER_DISCONNECTED:", 18) == 0) {
-                const char *username = buffer + 18;
-                printf("User disconnected: %s\n", username);
-                update_client_list(username, FALSE);
+            // Пропускаем сообщение о подключении и отключении пользователей
+            if (strncmp(buffer, "USER_CONNECTED:", 15) == 0 || strncmp(buffer, "USER_DISCONNECTED:", 18) == 0) {
+                continue;  // Игнорируем это сообщение на клиенте
+            }
+
+            // Проверка на корректность сообщения в UTF-8
+            if (g_utf8_validate(buffer, bytes_read, NULL)) {
+                gtk_text_buffer_insert_at_cursor(text_buffer, buffer, -1);
+                gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1);
             } else {
-                if (g_utf8_validate(buffer, bytes_read, NULL)) {
-                    gtk_text_buffer_insert_at_cursor(text_buffer, buffer, -1);
-                    gtk_text_buffer_insert_at_cursor(text_buffer, "\n", -1);
-                } else {
-                    fprintf(stderr, "Received invalid UTF-8 message: %.*s\n", bytes_read, buffer);
-                }
+                fprintf(stderr, "Received invalid UTF-8 message: %.*s\n", bytes_read, buffer);
             }
         } else {
             break;
@@ -168,7 +185,22 @@ void update_client_list(const gchar *username, gboolean is_connected) {
 
 // Вход пользователя
 void on_login_button_clicked(GtkButton *button, gpointer user_data) {
-    username = gtk_entry_get_text(GTK_ENTRY(user_data));
+    const char *username = gtk_entry_get_text(GTK_ENTRY(user_data));
+
+    // Проверяем, пустой ли никнейм
+    if (strlen(username) == 0) {
+        // Показ сообщения об ошибке
+        GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(login_window),
+                                                   GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                   GTK_MESSAGE_WARNING,
+                                                   GTK_BUTTONS_OK,
+                                                   "Please enter a username.");
+        gtk_dialog_run(GTK_DIALOG(dialog));
+        gtk_widget_destroy(dialog);
+        return;
+    }
+
+    // Если никнейм введен, отправляем его на сервер
     send(sock, username, strlen(username), 0);
     gtk_widget_hide(login_window);
     create_chat_window();
@@ -310,4 +342,3 @@ int main(int argc, char **argv) {
     close(sock);
     return 0;
 }
-

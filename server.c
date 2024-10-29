@@ -26,7 +26,6 @@ void broadcast_message(const char *message, Client *sender) {
         }
     }
     pthread_mutex_unlock(&clients_mutex);
-
 }
 
 void notify_user_connected(Client *client) {
@@ -48,12 +47,18 @@ void *handle_client(void *arg) {
 
     // Уведомляем всех клиентов о подключении нового пользователя
     notify_user_connected(client);
+    printf("User '%s' has connected.\n", client->username);  // Сообщение о подключении
 
     while (1) {
         memset(buffer, 0, BUFFER_SIZE);
         int bytes_read = read(client->socket, buffer, BUFFER_SIZE);
         if (bytes_read <= 0) {
             break; // Клиент отключился
+        }
+
+        // Проверяем на сообщение о выходе
+        if (strncmp(buffer, "USER_EXIT:", 10) == 0) {
+            break; // Выход пользователя
         }
 
         // Проверяем на переполнение
@@ -71,6 +76,7 @@ void *handle_client(void *arg) {
 
     // Уведомляем всех клиентов об отключении пользователя
     notify_user_disconnected(client);
+    printf("User '%s' has disconnected.\n", client->username);  // Сообщение об отключении
 
     // Удаляем клиента из списка
     pthread_mutex_lock(&clients_mutex);
@@ -131,13 +137,11 @@ int main() {
                 exit(EXIT_FAILURE);
             }
 
-
             Client *client = malloc(sizeof(Client));
             client->socket = new_socket;
 
             // Получаем имя пользователя
             read(new_socket, client->username, sizeof(client->username));
-            printf("User '%s' has connected.\n", client->username);
 
             // Добавляем нового клиента в массив клиентов
             pthread_mutex_lock(&clients_mutex);
