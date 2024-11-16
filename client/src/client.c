@@ -8,9 +8,14 @@
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 9090
+char current_user[64] = "";
 
-// Функция для отправки данных на сервер
-int send_to_server(const char *command, const char *username, const char *password) {
+int send_to_server(const char *command, const char *arg1, const char *arg2, const char *arg3, char *response, size_t response_size) {
+    if (!command || !arg1 || !arg2 || !arg3 || !response) {
+        fprintf(stderr, "send_to_server: invalid arguments\n");
+        return -1;
+    }
+
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         perror("Socket creation failed");
@@ -28,21 +33,19 @@ int send_to_server(const char *command, const char *username, const char *passwo
         return -1;
     }
 
-    // Формируем сообщение
     char message[256];
-    snprintf(message, sizeof(message), "%s %s %s", command, username, password);
+    snprintf(message, sizeof(message), "%s %s %s %s", command, arg1, arg2, arg3);
     send(sock, message, strlen(message), 0);
 
-    // Получаем ответ от сервера
-    char response[256];
-    memset(response, 0, sizeof(response));
-    read(sock, response, sizeof(response) - 1);
+    memset(response, 0, response_size);
+    read(sock, response, response_size - 1);
     close(sock);
 
-    printf("Server response: %s\n", response);
-
-    return strcmp(response, "OK") == 0 ? 0 : -1;
+    return 0;
 }
+
+
+
 
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
