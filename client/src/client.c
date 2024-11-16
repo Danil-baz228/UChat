@@ -1,3 +1,5 @@
+// client.c
+#include "../inc/client.h"
 #include <gtk/gtk.h>
 #include <arpa/inet.h>
 #include <string.h>
@@ -42,97 +44,6 @@ int send_to_server(const char *command, const char *username, const char *passwo
     return strcmp(response, "OK") == 0 ? 0 : -1;
 }
 
-// Открытие окна чата
-void create_chat_window() {
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Чат");
-    gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    GtkWidget *grid = gtk_grid_new();
-    gtk_container_add(GTK_CONTAINER(window), grid);
-
-    // Поле для отображения сообщений
-    GtkWidget *text_view = gtk_text_view_new();
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
-
-    // Поле для ввода сообщения
-    GtkWidget *entry_message = gtk_entry_new();
-
-    // Кнопка "Отправить"
-    GtkWidget *button_send = gtk_button_new_with_label("Отправить");
-
-    // Добавляем виджеты в сетку
-    gtk_grid_attach(GTK_GRID(grid), text_view, 0, 0, 2, 1);
-    gtk_grid_attach(GTK_GRID(grid), entry_message, 0, 1, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid), button_send, 1, 1, 1, 1);
-
-    gtk_widget_show_all(window);
-}
-
-// Обработчик для кнопки "Зарегистрироваться"
-void on_register_clicked(GtkWidget *widget, gpointer data) {
-    GtkWidget **entries = (GtkWidget **)data;
-    const char *username = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-    const char *password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-
-    if (strlen(username) == 0 || strlen(password) == 0) {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Имя пользователя и пароль не должны быть пустыми!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-        return;
-    }
-
-    if (send_to_server("REGISTER", username, password) == 0) {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                                   "Регистрация прошла успешно!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-    } else {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Ошибка регистрации!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-    }
-}
-
-// Обработчик для кнопки "Войти"
-void on_login_clicked(GtkWidget *widget, gpointer data) {
-    GtkWidget **entries = (GtkWidget **)data;
-    const char *username = gtk_entry_get_text(GTK_ENTRY(entries[0]));
-    const char *password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
-
-    if (strlen(username) == 0 || strlen(password) == 0) {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Имя пользователя и пароль не должны быть пустыми!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-        return;
-    }
-
-    if (send_to_server("LOGIN", username, password) == 0) {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                                   "Вход выполнен успешно!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-
-        // Открываем окно чата
-        create_chat_window();
-    } else {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Неверное имя пользователя или пароль!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
-    }
-}
-
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
@@ -172,6 +83,33 @@ int main(int argc, char *argv[]) {
 
     gtk_grid_attach(GTK_GRID(grid), button_register, 0, 2, 2, 1);
     gtk_grid_attach(GTK_GRID(grid), button_login, 0, 3, 2, 1);
+
+    const char *css_style =
+        "window {"
+        "   background-color: #4CAF50;"
+        "   padding: 10px;"
+        "}"
+        "button {"
+        "   background-color: #4CAF50;"
+        "   color: white;"
+        "   border-radius: 5px;"
+        "   padding: 15px;"
+        "   font-weight: bold;"
+        "}"
+        "button:hover {"
+        "   background-color: #45a049;"
+        "}"
+        "entry {"
+        "   padding: 15px;"
+        "   border-radius: 5px;"
+        "   margin-bottom: 10px;"
+        "}";
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_data(provider, css_style, -1, NULL);
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                              GTK_STYLE_PROVIDER(provider),
+                                              GTK_STYLE_PROVIDER_PRIORITY_USER);
 
     gtk_widget_show_all(window);
     gtk_main();
