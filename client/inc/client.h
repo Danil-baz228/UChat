@@ -17,6 +17,6 @@ void load_chat_messages(GtkWidget *text_view, const char *current_user, const ch
 gboolean update_chat_window(gpointer data);
 void load_users_list(GtkWidget *users_list);
 void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data);
-
+void create_login_window();
 
 #endif // CLIENT_H

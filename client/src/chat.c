@@ -3,22 +3,51 @@
 
 // Переменная для хранения буфера текстового виджета
 GtkTextBuffer *chat_buffer = NULL;
+
+
+void on_logout_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = GTK_WIDGET(user_data);
+
+    // Destroy the current chat window
+    gtk_widget_destroy(window);
+}
+
 void create_chat_window() {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Чат");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-    // Основной контейнер
+    // Основной вертикальный контейнер
+    GtkWidget *main_vertical_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_container_set_border_width(GTK_CONTAINER(main_vertical_box), 10);
+    gtk_container_add(GTK_CONTAINER(window), main_vertical_box);
+
+    // Верхняя панель с именем пользователя
+    GtkWidget *header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_set_homogeneous(GTK_BOX(header_box), TRUE);
+    gtk_box_pack_start(GTK_BOX(main_vertical_box), header_box, FALSE, FALSE, 0);
+
+    // Метка для имени пользователя
+    char user_label_text[128];
+    snprintf(user_label_text, sizeof(user_label_text), "Пользователь: %s", current_user);
+    GtkWidget *user_label = gtk_label_new(user_label_text);
+    gtk_box_pack_start(GTK_BOX(header_box), user_label, TRUE, TRUE, 0);
+
+    // Кнопка выхода
+    GtkWidget *logout_button = gtk_button_new_with_label("Выйти");
+    gtk_box_pack_end(GTK_BOX(header_box), logout_button, FALSE, FALSE, 0);
+
+    // Обработчик кнопки выхода
+    g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window);
+
+    // Основной горизонтальный контейнер
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_container_set_border_width(GTK_CONTAINER(main_box), 10);
-    gtk_container_add(GTK_CONTAINER(window), main_box);
+    gtk_box_pack_start(GTK_BOX(main_vertical_box), main_box, TRUE, TRUE, 0);
 
     // Список пользователей (левая панель)
     GtkWidget *users_list = gtk_list_box_new();
     gtk_widget_set_vexpand(users_list, TRUE);
-    // Добавляем обработчик выбора пользователя
-    g_signal_connect(users_list, "row-selected", G_CALLBACK(on_user_selected), window);
 
     GtkWidget *scrolled_users = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_users), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
@@ -26,7 +55,10 @@ void create_chat_window() {
     gtk_container_add(GTK_CONTAINER(scrolled_users), users_list);
     gtk_box_pack_start(GTK_BOX(main_box), scrolled_users, FALSE, TRUE, 0);
 
-    // Правая часть с чатом и вводом сообщений
+    // Обработчик выбора пользователя
+    g_signal_connect(users_list, "row-selected", G_CALLBACK(on_user_selected), window);
+
+    // Правая часть с чатом
     GtkWidget *right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_pack_start(GTK_BOX(main_box), right_box, TRUE, TRUE, 0);
 
@@ -59,6 +91,7 @@ void create_chat_window() {
 
     // Загрузка списка пользователей
     load_users_list(users_list);
+
     // Таймер для обновления сообщений каждые 2 секунды
     g_timeout_add(2000, (GSourceFunc)update_chat_window, window);
 

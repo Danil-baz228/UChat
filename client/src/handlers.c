@@ -2,6 +2,12 @@
 #include "../inc/client.h"
 #include <gtk/gtk.h>
 #include <string.h>
+void scroll_to_bottom(GtkTextView *text_view) {
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
+    GtkTextMark *mark = gtk_text_buffer_get_insert(buffer);
+    gtk_text_view_scroll_to_mark(text_view, mark, 0.0, TRUE, 0.0, 1.0);
+}
+
 void on_register_clicked(GtkWidget *widget, gpointer data) {
     GtkWidget **entries = (GtkWidget **)data;
     const char *username = gtk_entry_get_text(GTK_ENTRY(entries[0]));
@@ -116,10 +122,14 @@ void load_chat_messages(GtkWidget *text_view, const char *current_user, const ch
     if (send_to_server("GET_MESSAGES", current_user, selected_user, "", response, sizeof(response)) == 0) {
         GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
         gtk_text_buffer_set_text(buffer, response, -1); // Обновляем текстовое поле
+
+        // Scroll to the bottom after loading messages
+        scroll_to_bottom(GTK_TEXT_VIEW(text_view));
     } else {
         fprintf(stderr, "Ошибка загрузки сообщений с сервером.\n");
     }
 }
+
 
 gboolean update_chat_window(gpointer data) {
     GtkWidget *window = GTK_WIDGET(data);
