@@ -88,25 +88,12 @@ int main(int argc, char *argv[]) {
     gtk_grid_attach(GTK_GRID(grid), button_login, 0, 3, 2, 1);
 
     const char *css_style =
-        "window {"
-        "   background-color: #4CAF50;"
-        "   padding: 10px;"
-        "}"
-        "button {"
-        "   background-color: #4CAF50;"
-        "   color: white;"
-        "   border-radius: 5px;"
-        "   padding: 15px;"
-        "   font-weight: bold;"
-        "}"
-        "button:hover {"
-        "   background-color: #45a049;"
-        "}"
-        "entry {"
-        "   padding: 15px;"
-        "   border-radius: 5px;"
-        "   margin-bottom: 10px;"
-        "}";
+    "window { background-color: #ECEFF4; font-family: Arial, sans-serif; }"
+    "label { font-size: 14px; color: #2E3440; font-weight: bold; }"
+    "entry { border: 2px solid #4C566A; border-radius: 5px; padding: 10px; margin-bottom: 15px; background-color: #D8DEE9; color: #2E3440; font-size: 14px; }"
+    "entry:focus { border-color: #3B4252; }"
+    "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 10px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
+    "button:hover { background-color: #81A1C1; }";
 
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(provider, css_style, -1, NULL);

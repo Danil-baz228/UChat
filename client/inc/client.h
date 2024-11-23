@@ -18,5 +18,12 @@ gboolean update_chat_window(gpointer data);
 void load_users_list(GtkWidget *users_list);
 void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data);
 void create_login_window();
+gboolean update_sticker_window_position(GtkWidget *sticker_window);
 
+GtkWidget *create_sticker_window(GtkWidget *parent_window, GtkWidget *text_view);
+void show_sticker_window(GtkButton *button, gpointer user_data);
+
+void on_sticker_selected(GtkButton *button, gpointer user_data);
+void hide_sticker_window(GtkWidget *sticker_window, gpointer user_data);
+void update_button_position(GtkButton *button, GtkWidget *sticker_window);
 #endif // CLIENT_H

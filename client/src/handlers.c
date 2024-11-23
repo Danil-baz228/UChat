@@ -70,11 +70,6 @@ void load_users_list(GtkWidget *users_list) {
     }
 }
 
-
-
-
-
-
 void on_login_clicked(GtkWidget *widget, gpointer data) {
     GtkWidget **entries = (GtkWidget **)data;
     const char *username = gtk_entry_get_text(GTK_ENTRY(entries[0]));
@@ -164,12 +159,6 @@ void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data) {
 
 
 
-
-
-
-
-
-
 // Обработчик для кнопки "Найти пользователя"
 void on_search_clicked(GtkWidget *widget, gpointer data) {
     GtkWidget *entry_search = (GtkWidget *)data;
@@ -199,6 +188,7 @@ void on_search_clicked(GtkWidget *widget, gpointer data) {
         gtk_widget_destroy(dialog);
     }
 }
+
 void on_send_message_clicked(GtkWidget *widget, gpointer data) {
     GtkWidget *window = GTK_WIDGET(data);
     GtkWidget *entry_message = g_object_get_data(G_OBJECT(window), "entry_message");
