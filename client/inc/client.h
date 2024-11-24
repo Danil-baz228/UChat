@@ -21,7 +21,7 @@ void load_users_list(GtkWidget *users_list);
 void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data);
 void create_login_window();
 
-
+gboolean update_chat_window(gpointer data);
 void on_sticker_button_clicked(GtkButton *button, gpointer user_data);
 void on_sticker_selected(GtkButton *button, gpointer user_data);
 void hide_sticker_window(GtkWidget *sticker_window, gpointer user_data);
