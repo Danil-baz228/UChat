@@ -45,4 +45,7 @@ GtkWidget *get_sticker_window();
 gboolean on_window_moved(GtkWidget *widget, GdkEvent *event, gpointer data);
 
 
+int handle_register(const char *username, const char *password);
+int handle_login(const char *username, const char *password);
+
 #endif // CLIENT_H

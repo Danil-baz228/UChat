@@ -7,11 +7,7 @@ GtkTextBuffer *chat_buffer = NULL;
 
 void on_logout_clicked(GtkButton *button, gpointer user_data) {
     GtkWidget *window = GTK_WIDGET(user_data);
-
-    // Закрываем окно чата
     gtk_widget_destroy(window);
-
-    // Открываем окно регистрации
     create_login_window();
 }
 

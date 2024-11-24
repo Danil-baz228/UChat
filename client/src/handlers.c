@@ -25,19 +25,34 @@ void on_register_clicked(GtkWidget *widget, gpointer data) {
 
     char response[256];
     if (send_to_server("REGISTER", username, password, "", response, sizeof(response)) == 0) {
-        GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
-                                                   GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                                   "Регистрация прошла успешно!");
-        gtk_dialog_run(GTK_DIALOG(dialog));
-        gtk_widget_destroy(dialog);
+        if (strcmp(response, "OK") == 0) {
+            GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                       GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
+                                                       "Регистрация прошла успешно!");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        } else if (strcmp(response, "USER_EXISTS") == 0) {
+            GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                                       "Пользователь с таким именем уже существует!");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        } else {
+            GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                                       "Ошибка регистрации!");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        }
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Ошибка регистрации!");
+                                                   "Ошибка подключения к серверу!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
 }
+
 void load_users_list(GtkWidget *users_list) {
     // Очистка списка пользователей
     GList *children = gtk_container_get_children(GTK_CONTAINER(users_list));
@@ -87,22 +102,43 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
 
     char response[256];
     if (send_to_server("LOGIN", username, password, "", response, sizeof(response)) == 0) {
-        // Сохраняем имя пользователя
-        strncpy(current_user, username, sizeof(current_user) - 1);
-        // Открываем окно чата
-        create_chat_window();
-        // Закрываем окно авторизации
-        GtkWidget *parent_window = gtk_widget_get_toplevel(widget);
-        gtk_widget_hide(parent_window);
-
+        if (strcmp(response, "OK") == 0) {
+            // Сохраняем имя пользователя
+            strncpy(current_user, username, sizeof(current_user) - 1);
+            // Открываем окно чата
+            create_chat_window();
+            // Закрываем окно авторизации
+            GtkWidget *parent_window = gtk_widget_get_toplevel(widget);
+            gtk_widget_hide(parent_window);
+        } else if (strcmp(response, "USER_NOT_FOUND") == 0) {
+            GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                                       "Пользователь с таким именем не найден!");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        } else if (strcmp(response, "INVALID") == 0) {
+            GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                                       "Неверный пароль!");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        } else {
+            GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
+                                                       GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
+                                                       "Ошибка входа. Попробуйте снова.");
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+        }
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Неверное имя пользователя или пароль!");
+                                                   "Ошибка подключения к серверу!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
 }
+
+
 void load_chat_messages(GtkWidget *text_view, const char *current_user, const char *selected_user) {
     if (!selected_user || strlen(selected_user) == 0) {
         gtk_text_buffer_set_text(chat_buffer, "Выберите пользователя для чата\n", -1);
