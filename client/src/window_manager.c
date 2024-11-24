@@ -2,9 +2,9 @@
 #include "../inc/client.h"
 #include <gtk/gtk.h>
 
-static GtkWidget *main_window = NULL; // Главное окно
-static GtkWidget *chat_window = NULL; // Окно чата
-static GtkWidget *sticker_window = NULL; // Окно стикеров
+static GtkWidget *main_window = NULL;
+static GtkWidget *chat_window = NULL;
+static GtkWidget *sticker_window = NULL;
 
 void set_main_window(GtkWidget *window) {
     main_window = window;

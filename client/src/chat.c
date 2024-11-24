@@ -62,6 +62,7 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme) {
         gtk_css_provider_load_from_data(provider, light_css, -1, NULL);
     }
 }
+
 void create_chat_window() {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Чат");
@@ -107,17 +108,19 @@ void create_chat_window() {
     GtkWidget *right_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
     gtk_box_pack_start(GTK_BOX(main_box), right_box, TRUE, TRUE, 0);
 
-    GtkWidget *text_view = gtk_text_view_new();
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
-    gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(text_view), GTK_WRAP_WORD_CHAR);
-    chat_buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-    gtk_text_buffer_set_text(chat_buffer, "Добро пожаловать в чат!\n", -1);
+    GtkWidget *chat_container = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+    gtk_widget_set_vexpand(chat_container, TRUE);
 
     GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
     gtk_widget_set_vexpand(scrolled_window, TRUE);
-    gtk_container_add(GTK_CONTAINER(scrolled_window), text_view);
+    gtk_container_add(GTK_CONTAINER(scrolled_window), chat_container);
     gtk_box_pack_start(GTK_BOX(right_box), scrolled_window, TRUE, TRUE, 0);
+
+    // Сохраняем chat_container и scrolled_window для дальнейшего использования
+    g_object_set_data(G_OBJECT(window), "chat_container", chat_container);
+    GtkAdjustment *adjustment = gtk_scrolled_window_get_vadjustment(GTK_SCROLLED_WINDOW(scrolled_window));
+    g_object_set_data(G_OBJECT(window), "chat_adjustment", adjustment);
 
     GtkWidget *message_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(right_box), message_box, FALSE, FALSE, 0);
@@ -145,8 +148,6 @@ void create_chat_window() {
     GtkWidget *sticker_grid = gtk_grid_new();
     gtk_container_add(GTK_CONTAINER(sticker_scrolled_window), sticker_grid);
 
-
-
     int num_stickers = sizeof(stickers) / sizeof(stickers[0]);
 
     for (int i = 0; i < num_stickers; i++) {
@@ -159,7 +160,6 @@ void create_chat_window() {
     g_signal_connect(sticker_button, "clicked", G_CALLBACK(on_sticker_button_clicked), sticker_popover);
 
     // Добавление CSS стилей
-    // Добавление CSS стилей
     GtkCssProvider *provider = gtk_css_provider_new();
     const char *current_theme = get_system_theme_chat();
     set_chat_theme(provider, current_theme);
@@ -171,7 +171,6 @@ void create_chat_window() {
 
     g_timeout_add(2000, (GSourceFunc)update_chat_window, window);
 
-    g_object_set_data(G_OBJECT(window), "text_view", text_view);
     g_object_set_data(G_OBJECT(window), "entry_message", entry_message);
     g_object_set_data(G_OBJECT(window), "users_list", users_list);
     g_object_set_data(G_OBJECT(window), "current_user", current_user);
@@ -179,5 +178,36 @@ void create_chat_window() {
 
     g_signal_connect(button_send, "clicked", G_CALLBACK(on_send_message_clicked), window);
 }
+
+
+
+void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message) {
+    // Основной контейнер для одного сообщения
+    GtkWidget *message_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+    gtk_widget_set_margin_top(message_box, 5);
+    gtk_widget_set_margin_bottom(message_box, 5);
+    gtk_widget_set_margin_start(message_box, 10);
+    gtk_widget_set_margin_end(message_box, 10);
+
+    // Метка с отправителем и временем
+    char sender_and_time[128];
+    snprintf(sender_and_time, sizeof(sender_and_time), "%s [%s]", sender, time);
+    GtkWidget *meta_label = gtk_label_new(sender_and_time);
+    gtk_widget_set_halign(meta_label, GTK_ALIGN_START);
+
+    // Метка с текстом сообщения
+    GtkWidget *message_label = gtk_label_new(message);
+    gtk_label_set_line_wrap(GTK_LABEL(message_label), TRUE);
+    gtk_widget_set_halign(message_label, GTK_ALIGN_START);
+
+    // Добавить метки в контейнер сообщения
+    gtk_box_pack_start(GTK_BOX(message_box), meta_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(message_box), message_label, FALSE, FALSE, 0);
+
+    // Добавить контейнер сообщения в общий контейнер чата
+    gtk_box_pack_start(GTK_BOX(chat_container), message_box, FALSE, FALSE, 0);
+    gtk_widget_show_all(chat_container);
+}
+
 
 

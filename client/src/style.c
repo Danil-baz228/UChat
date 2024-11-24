@@ -1,6 +1,5 @@
 #include "../inc/client.h"
 
-
 const char *light_css =
         "window { background-color: #ECEFF4; font-family: Arial, sans-serif; }"
         "label { font-size: 14px; color: #2E3440; font-weight: bold; }"

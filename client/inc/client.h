@@ -44,7 +44,7 @@ GtkWidget *get_sticker_window();
 
 gboolean on_window_moved(GtkWidget *widget, GdkEvent *event, gpointer data);
 
-
+void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message);
 int handle_register(const char *username, const char *password);
 int handle_login(const char *username, const char *password);
 

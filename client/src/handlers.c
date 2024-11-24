@@ -139,39 +139,46 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
 }
 
 
-void load_chat_messages(GtkWidget *text_view, const char *current_user, const char *selected_user) {
-    if (!selected_user || strlen(selected_user) == 0) {
-        gtk_text_buffer_set_text(chat_buffer, "Выберите пользователя для чата\n", -1);
-        return;
-    }
-
-    char response[2048] = {0}; // Буфер для сообщений
-
-    // Отправка команды на сервер для получения сообщений
+void load_chat_messages(GtkWidget *chat_container, const char *current_user, const char *selected_user) {
+    char response[2048] = {0};
     if (send_to_server("GET_MESSAGES", current_user, selected_user, "", response, sizeof(response)) == 0) {
-        GtkTextBuffer *buffer = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
-        gtk_text_buffer_set_text(buffer, response, -1); // Обновляем текстовое поле
+        // Очистить контейнер сообщений перед загрузкой новых
+        GList *children = gtk_container_get_children(GTK_CONTAINER(chat_container));
+        for (GList *child = children; child != NULL; child = child->next) {
+            gtk_widget_destroy(GTK_WIDGET(child->data));
+        }
+        g_list_free(children);
 
-        // Scroll to the bottom after loading messages
-        scroll_to_bottom(GTK_TEXT_VIEW(text_view));
-    } else {
-        fprintf(stderr, "Ошибка загрузки сообщений с сервером.\n");
+        // Разбить ответ сервера на строки
+        char *line = strtok(response, "\n");
+        while (line != NULL) {
+            char sender[64], time[64], message[1024];
+            if (sscanf(line, "%63s %63s %[^\n]", sender, time, message) == 3) {
+                add_message_to_chat(chat_container, sender, time, message);
+            }
+            line = strtok(NULL, "\n");
+        }
     }
 }
-
-
 gboolean update_chat_window(gpointer data) {
     GtkWidget *window = GTK_WIDGET(data);
-    GtkWidget *text_view = g_object_get_data(G_OBJECT(window), "text_view");
+    GtkWidget *chat_container = g_object_get_data(G_OBJECT(window), "chat_container");
+    GtkAdjustment *adjustment = g_object_get_data(G_OBJECT(window), "chat_adjustment");
     const char *current_user = g_object_get_data(G_OBJECT(window), "current_user");
     const char *selected_user = g_object_get_data(G_OBJECT(window), "selected_user");
 
     if (selected_user && strlen(selected_user) > 0) {
-        load_chat_messages(text_view, current_user, selected_user);
+        load_chat_messages(chat_container, current_user, selected_user);
+
+        // Прокрутка вниз
+        gtk_adjustment_set_value(adjustment, gtk_adjustment_get_upper(adjustment));
     }
 
     return TRUE; // Возвращаем TRUE для повторного вызова таймера
 }
+
+
+
 
 
 void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data) {

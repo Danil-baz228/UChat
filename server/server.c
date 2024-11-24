@@ -152,7 +152,7 @@ int send_message(sqlite3 *db, const char *sender, const char *receiver, const ch
     return 0;
 }
 int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result, size_t result_size) {
-    const char *sql = "SELECT u1.username AS sender_name, u2.username AS receiver_name, m.message "
+    const char *sql = "SELECT u1.username AS sender_name, m.timestamp, m.message "
                       "FROM messages m "
                       "JOIN users u1 ON m.sender_id = u1.id "
                       "JOIN users u2 ON m.receiver_id = u2.id "
@@ -176,11 +176,11 @@ int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
         const char *sender_name = (const char *)sqlite3_column_text(stmt, 0);
-        const char *receiver_name = (const char *)sqlite3_column_text(stmt, 1);
+        const char *timestamp = (const char *)sqlite3_column_text(stmt, 1);
         const char *message = (const char *)sqlite3_column_text(stmt, 2);
 
         char formatted_message[512];
-        snprintf(formatted_message, sizeof(formatted_message), "%s -> %s: %s\n", sender_name, receiver_name, message);
+        snprintf(formatted_message, sizeof(formatted_message), "%s %s %s\n", sender_name, timestamp, message);
 
         // Конкатенация в результат
         strncat(result, formatted_message, result_size - strlen(result) - 1);
@@ -189,6 +189,7 @@ int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result
     sqlite3_finalize(stmt);
     return 0;
 }
+
 
 
 
