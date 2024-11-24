@@ -2,6 +2,7 @@
 #include "../inc/client.h"
 #include <gtk/gtk.h>
 #include <string.h>
+
 void scroll_to_bottom(GtkTextView *text_view) {
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
     GtkTextMark *mark = gtk_text_buffer_get_insert(buffer);

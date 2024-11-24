@@ -81,22 +81,41 @@ void create_chat_window() {
     // Кнопка для выбора стикеров
     GtkWidget *sticker_button = gtk_button_new_with_label("🙂");
     gtk_box_pack_start(GTK_BOX(message_box), sticker_button, FALSE, FALSE, 0);
-    GtkWidget *sticker_window = create_sticker_window(window, entry_message); // Создаем окно для стикеров
 
-    g_signal_connect(sticker_button, "clicked", G_CALLBACK(update_button_position), sticker_window);
-	g_signal_connect(sticker_button, "clicked", G_CALLBACK(show_sticker_window), sticker_window);
+    // Создаем GtkPopover для стикеров
+    GtkWidget *sticker_popover = gtk_popover_new(sticker_button);
+    GtkWidget *sticker_scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sticker_scrolled_window),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(sticker_scrolled_window, 200, 200); // Размер области прокрутки
+    gtk_container_add(GTK_CONTAINER(sticker_popover), sticker_scrolled_window);
 
-	// Добавление CSS стилей
+    GtkWidget *sticker_grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(sticker_scrolled_window), sticker_grid);
+
+
+    int num_stickers = sizeof(stickers) / sizeof(stickers[0]);
+
+    for (int i = 0; i < num_stickers; i++) {
+        GtkWidget *sticker_item_button = gtk_button_new_with_label(stickers[i]);
+        g_signal_connect(sticker_item_button, "clicked", G_CALLBACK(on_sticker_selected), entry_message);
+        gtk_grid_attach(GTK_GRID(sticker_grid), sticker_item_button, i % 3, i / 3, 1, 1); // Располагаем кнопки в сетке
+    }
+
+    // Подключение кнопки к показу поповера
+    g_signal_connect(sticker_button, "clicked", G_CALLBACK(on_sticker_button_clicked), sticker_popover);
+
+    // Добавление CSS стилей
     const char *css_style =
         "window { background-color: #ECEFF4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }"
-                "label { font-size: 16px; color: #2E3440; font-weight: bold; }"
-                "entry { border: 2px solid #4C566A; border-radius: 5px; padding: 10px; margin-bottom: 15px; background-color: #D8DEE9; color: #2E3440; font-size: 14px; }"
-                "entry:focus { border-color: #3B4252; }"
-                "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 10px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
-                "button:hover { background-color: #81A1C1; }"
-                "scrolledwindow { background-color: #D8DEE9; border-radius: 5px; }"
-                "listbox { background-color: #D8DEE9; color: #2E3440; border-radius: 5px; padding: 10px; margin-top: 10px; }"
-                "listbox row:hover { background-color: #B2B9C0; }";
+        "label { font-size: 16px; color: #2E3440; font-weight: bold; }"
+        "entry { border: 2px solid #4C566A; border-radius: 5px; padding: 10px; margin-bottom: 15px; background-color: #D8DEE9; color: #2E3440; font-size: 14px; }"
+        "entry:focus { border-color: #3B4252; }"
+        "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 10px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
+        "button:hover { background-color: #81A1C1; }"
+        "scrolledwindow { background-color: #D8DEE9; border-radius: 5px; }"
+        "listbox { background-color: #D8DEE9; color: #2E3440; border-radius: 5px; padding: 10px; margin-top: 10px; }"
+        "listbox row:hover { background-color: #B2B9C0; }";
 
     GtkCssProvider *provider = gtk_css_provider_new();
     gtk_css_provider_load_from_data(provider, css_style, -1, NULL);
@@ -118,24 +137,25 @@ void create_chat_window() {
 }
 
 
-void update_button_position(GtkButton *button, GtkWidget *sticker_window) {
-    while (gtk_events_pending()) {
-        gtk_main_iteration_do(FALSE); // Обновляем интерфейс
-    }
 
-    GtkWidget *toplevel = gtk_widget_get_toplevel(GTK_WIDGET(button));
-    if (!GTK_IS_WINDOW(toplevel)) {
-        g_print("Ошибка: Toplevel не является окном\n");
-        return;
-    }
-
-    // Считываем координаты кнопки
-    int button_x, button_y;
-    gtk_widget_translate_coordinates(GTK_WIDGET(button), toplevel, 0, 0, &button_x, &button_y);
-
-    g_object_set_data(G_OBJECT(sticker_window), "button_x", GINT_TO_POINTER(button_x));
-    g_object_set_data(G_OBJECT(sticker_window), "button_y", GINT_TO_POINTER(button_y));
-    g_print("Обновлены координаты кнопки: (%d, %d)\n", button_x, button_y);
+void on_sticker_button_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *popover = GTK_WIDGET(user_data);
+    gtk_widget_show_all(popover); // Показываем содержимое
+    gtk_popover_popup(GTK_POPOVER(popover)); // Открываем поповер
 }
 
+// Функция для обработки выбора стикера
+void on_sticker_selected(GtkButton *button, gpointer user_data) {
+    GtkEntry *entry_message = GTK_ENTRY(user_data);
+    const char *sticker = gtk_button_get_label(button);
 
+    // Добавляем стикер в текстовое поле ввода
+    const char *current_text = gtk_entry_get_text(entry_message);
+    char new_text[256];
+    snprintf(new_text, sizeof(new_text), "%s %s", current_text, sticker);
+    gtk_entry_set_text(entry_message, new_text);
+
+    // Закрываем поповер
+    GtkWidget *popover = gtk_widget_get_parent(GTK_WIDGET(button));
+    gtk_popover_popdown(GTK_POPOVER(popover));
+}

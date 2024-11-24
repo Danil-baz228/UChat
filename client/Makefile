@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -I./inc
 LIBS = `pkg-config --cflags --libs gtk+-3.0`
-SRC = src/client.c src/handlers.c src/chat.c src/stickers.c
+SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c
 OBJ = $(SRC:src/%.c=obj/%.o)
 OUT = client
 

@@ -45,16 +45,17 @@ int send_to_server(const char *command, const char *arg1, const char *arg2, cons
 }
 
 
-
-
 int main(int argc, char *argv[]) {
     gtk_init(&argc, &argv);
 
-    // Главное окно
+    // Создаем главное окно
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Клиент");
     gtk_window_set_default_size(GTK_WINDOW(window), 400, 200);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+    // Регистрируем главное окно в window_manager
+    set_main_window(window);
 
     // Сетка для размещения виджетов
     GtkWidget *grid = gtk_grid_new();
