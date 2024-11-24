@@ -95,9 +95,6 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
         GtkWidget *parent_window = gtk_widget_get_toplevel(widget);
         gtk_widget_hide(parent_window);
 
-
-
-
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,

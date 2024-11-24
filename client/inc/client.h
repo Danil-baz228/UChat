@@ -2,11 +2,15 @@
 #define CLIENT_H
 
 #include <gtk/gtk.h>
+#include <gio/gio.h>
 
 extern char current_user[64];
 extern GtkTextBuffer *chat_buffer;
 static int chat_window_x = 0;
 static int chat_window_y = 0;
+
+void set_theme(GtkCssProvider *provider, const char *theme);
+
 
 // Объявления функций
 int send_to_server(const char *command, const char *arg1, const char *arg2, const char *arg3, char *response, size_t response_size);
@@ -26,6 +30,8 @@ void on_sticker_button_clicked(GtkButton *button, gpointer user_data);
 void on_sticker_selected(GtkButton *button, gpointer user_data);
 void hide_sticker_window(GtkWidget *sticker_window, gpointer user_data);
 void update_button_position(GtkButton *button, GtkWidget *sticker_window);
+
+
 
 void set_main_window(GtkWidget *window);
 GtkWidget *get_main_window();

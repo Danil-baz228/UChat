@@ -1,15 +1,16 @@
-// client.c
 #include "../inc/client.h"
 #include <gtk/gtk.h>
+#include <gio/gio.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-
+#include "style.c"
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 9090
 char current_user[64] = "";
 
+// Функция для отправки данных на сервер
 int send_to_server(const char *command, const char *arg1, const char *arg2, const char *arg3, char *response, size_t response_size) {
     if (!command || !arg1 || !arg2 || !arg3 || !response) {
         fprintf(stderr, "send_to_server: invalid arguments\n");
@@ -44,27 +45,55 @@ int send_to_server(const char *command, const char *arg1, const char *arg2, cons
     return 0;
 }
 
+// Функция для определения системной темы
+const char *get_system_theme() {
+    GSettings *settings = g_settings_new("org.gnome.desktop.interface");
+    if (!settings) {
+        return "light"; // Если невозможно получить настройки, по умолчанию светлая тема
+    }
 
-int main(int argc, char *argv[]) {
-    gtk_init(&argc, &argv);
+    gchar *theme = g_settings_get_string(settings, "gtk-theme");
+    const char *result = "light"; // По умолчанию светлая тема
 
+    if (theme) {
+        if (g_str_has_suffix(theme, "-dark")) {
+            result = "dark";
+        } else {
+            result = "light";
+        }
+        g_free(theme);
+    }
+
+    g_object_unref(settings);
+    return result;
+}
+
+// Функция для применения темы
+void set_theme(GtkCssProvider *provider, const char *theme) {
+    if (strcmp(theme, "dark") == 0) {
+        gtk_css_provider_load_from_data(provider, dark_css, -1, NULL);
+    } else {
+        gtk_css_provider_load_from_data(provider, light_css, -1, NULL);
+    }
+}
+
+void create_login_window(GtkCssProvider *provider) {
     // Создаем главное окно
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Клиент");
-    gtk_window_set_default_size(GTK_WINDOW(window), 400, 200);
+    gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
+    gtk_container_set_border_width(GTK_CONTAINER(window), 20);
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
-
-    // Регистрируем главное окно в window_manager
-    set_main_window(window);
 
     // Сетка для размещения виджетов
     GtkWidget *grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(grid), 15);
+    gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
     gtk_container_add(GTK_CONTAINER(window), grid);
 
     // Поля ввода
     GtkWidget *label_username = gtk_label_new("Имя пользователя:");
     GtkWidget *entry_username = gtk_entry_new();
-
     GtkWidget *label_password = gtk_label_new("Пароль:");
     GtkWidget *entry_password = gtk_entry_new();
     gtk_entry_set_visibility(GTK_ENTRY(entry_password), FALSE);
@@ -73,37 +102,44 @@ int main(int argc, char *argv[]) {
     GtkWidget *button_register = gtk_button_new_with_label("Зарегистрироваться");
     GtkWidget *button_login = gtk_button_new_with_label("Войти");
 
+    // Динамически выделяем память для массива указателей
+    GtkWidget **entries = g_malloc(sizeof(GtkWidget *) * 2);
+    entries[0] = entry_username;
+    entries[1] = entry_password;
+
     // Привязка обработчиков к кнопкам
-    GtkWidget *entries[2] = {entry_username, entry_password};
     g_signal_connect(button_register, "clicked", G_CALLBACK(on_register_clicked), entries);
     g_signal_connect(button_login, "clicked", G_CALLBACK(on_login_clicked), entries);
 
     // Добавление виджетов в сетку
     gtk_grid_attach(GTK_GRID(grid), label_username, 0, 0, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), entry_username, 1, 0, 1, 1);
-
     gtk_grid_attach(GTK_GRID(grid), label_password, 0, 1, 1, 1);
     gtk_grid_attach(GTK_GRID(grid), entry_password, 1, 1, 1, 1);
-
     gtk_grid_attach(GTK_GRID(grid), button_register, 0, 2, 2, 1);
     gtk_grid_attach(GTK_GRID(grid), button_login, 0, 3, 2, 1);
 
-    const char *css_style =
-    "window { background-color: #ECEFF4; font-family: Arial, sans-serif; }"
-    "label { font-size: 14px; color: #2E3440; font-weight: bold; }"
-    "entry { border: 2px solid #4C566A; border-radius: 5px; padding: 10px; margin-bottom: 15px; background-color: #D8DEE9; color: #2E3440; font-size: 14px; }"
-    "entry:focus { border-color: #3B4252; }"
-    "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 10px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
-    "button:hover { background-color: #81A1C1; }";
-
-    GtkCssProvider *provider = gtk_css_provider_new();
-    gtk_css_provider_load_from_data(provider, css_style, -1, NULL);
+    // Применение темы
     gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
                                               GTK_STYLE_PROVIDER(provider),
                                               GTK_STYLE_PROVIDER_PRIORITY_USER);
 
     gtk_widget_show_all(window);
-    gtk_main();
+}
 
+
+
+int main(int argc, char *argv[]) {
+    gtk_init(&argc, &argv);
+
+    // CSS Provider
+    GtkCssProvider *provider = gtk_css_provider_new();
+    const char *current_theme = get_system_theme();
+    set_theme(provider, current_theme);
+
+    // Создаем окно логина
+    create_login_window(provider);
+
+    gtk_main();
     return 0;
 }
