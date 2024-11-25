@@ -70,12 +70,17 @@ const char *get_system_theme() {
 
 // Функция для применения темы
 void set_theme(GtkCssProvider *provider, const char *theme) {
+
+
+
+
     if (strcmp(theme, "dark") == 0) {
         gtk_css_provider_load_from_data(provider, dark_css, -1, NULL);
     } else {
         gtk_css_provider_load_from_data(provider, light_css, -1, NULL);
     }
 }
+
 void create_login_window() {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Регистрация");

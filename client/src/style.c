@@ -15,5 +15,3 @@ const char *dark_css =
     "entry:focus { border-color: #81A1C1; }"
     "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 12px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
     "button:hover { background-color: #81A1C1; }";
-
-

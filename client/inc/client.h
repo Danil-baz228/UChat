@@ -13,6 +13,10 @@ void set_theme(GtkCssProvider *provider, const char *theme);
 
 
 // Объявления функций
+const char *get_system_theme_chat();
+void set_chat_theme(GtkCssProvider *provider, const char *theme);
+
+//
 int send_to_server(const char *command, const char *arg1, const char *arg2, const char *arg3, char *response, size_t response_size);
 void create_chat_window();
 void on_register_clicked(GtkWidget *widget, gpointer data);
