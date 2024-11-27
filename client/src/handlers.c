@@ -177,10 +177,6 @@ gboolean update_chat_window(gpointer data) {
     return TRUE; // Возвращаем TRUE для повторного вызова таймера
 }
 
-
-
-
-
 void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data) {
     if (!row) return;
 
@@ -197,8 +193,6 @@ void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data) {
     // Загрузка сообщений для выбранного пользователя
     load_chat_messages(text_view, current_user, selected_user);
 }
-
-
 
 // Обработчик для кнопки "Найти пользователя"
 void on_search_clicked(GtkWidget *widget, gpointer data) {

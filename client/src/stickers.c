@@ -29,7 +29,6 @@ const char *stickers[] = {
     "🕺", "💃", "🪩", "🕴", "👤", "👥", "🫂", "👣", "🦰", "🦱", "🦳", "🦲", "🏃", "🏃‍♂️", "🏃‍♀️", "💃"
 };
 
-
 void on_sticker_button_clicked(GtkButton *button, gpointer user_data) {
     GtkWidget *popover = GTK_WIDGET(user_data);
     gtk_widget_show_all(popover); // Показываем содержимое

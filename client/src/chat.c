@@ -1,28 +1,8 @@
 /// chat.c
-#include <gtk/gtk.h>
 #include "../inc/client.h"
 #include "stickers.c"
 // Переменная для хранения буфера текстового виджета
 GtkTextBuffer *chat_buffer = NULL;
-
-static gboolean notifications_enabled = TRUE; // Уведомления включены по умолчанию
-
-
-char current_language[3] = "RU"; // Начальный язык — русский
-void update_text_labels(gpointer user_data);
-
-void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
-    // Переключаем язык между "RU" и "EN"
-    if (g_strcmp0(current_language, "RU") == 0) {
-        g_strlcpy(current_language, "EN", sizeof(current_language));
-    } else {
-        g_strlcpy(current_language, "RU", sizeof(current_language));
-    }
-
-    // Обновляем текстовые элементы интерфейса
-    update_text_labels(user_data); // Функция обновления меток и текста
-}
-
 
 //void switch_language(GtkButton *button, gpointer user_data) {
 //    if (g_strcmp0(current_language, "RU") == 0) {
@@ -35,106 +15,6 @@ void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
 //
 //    update_text_labels(user_data); // Обновление всех меток в интерфейсе
 //}
-
-
-void update_text_labels(gpointer user_data) {
-    GtkWidget *window = GTK_WIDGET(user_data);
-
-    // Получаем указатели на элементы интерфейса
-    GtkWidget *logout_button = g_object_get_data(G_OBJECT(window), "logout_button");
-    GtkWidget *send_button = g_object_get_data(G_OBJECT(window), "send_button");
-    GtkWidget *sticker_button = g_object_get_data(G_OBJECT(window), "sticker_button");
-    GtkWidget *user_label = g_object_get_data(G_OBJECT(window), "user_label");
-    GtkWidget *entry_message = g_object_get_data(G_OBJECT(window), "entry_message"); // Поле ввода сообщения
-
-    // Обновляем текст в зависимости от текущего языка
-    if (g_strcmp0(current_language, "RU") == 0) {
-        // Кнопки
-        gtk_button_set_label(GTK_BUTTON(logout_button), "Выйти");
-        gtk_button_set_label(GTK_BUTTON(send_button), "Отправить");
-        gtk_button_set_label(GTK_BUTTON(sticker_button), "🙂");
-
-        // Обновление метки пользователя
-        if (user_label) {
-            char user_label_text[128];
-            snprintf(user_label_text, sizeof(user_label_text), "Пользователь: %s", current_user);
-            gtk_label_set_text(GTK_LABEL(user_label), user_label_text);
-        }
-
-        // Обновление текста-заполнителя для поля ввода сообщения
-        if (entry_message) {
-            gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Введите сообщение");
-        }
-    } else { // "EN"
-        // Кнопки
-        gtk_button_set_label(GTK_BUTTON(logout_button), "Logout");
-        gtk_button_set_label(GTK_BUTTON(send_button), "Send");
-        gtk_button_set_label(GTK_BUTTON(sticker_button), "🙂");
-
-        // Обновление метки пользователя
-        if (user_label) {
-            char user_label_text[128];
-            snprintf(user_label_text, sizeof(user_label_text), "User: %s", current_user);
-            gtk_label_set_text(GTK_LABEL(user_label), user_label_text);
-        }
-
-        // Обновление текста-заполнителя для поля ввода сообщения
-        if (entry_message) {
-            gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Enter message");
-        }
-    }
-}
-
-void on_toggle_notifications(GtkMenuItem *menuitem, gpointer user_data) {
-    // Переключаем состояние уведомлений
-    notifications_enabled = !notifications_enabled;
-
-    // Обновляем текст кнопки
-    if (notifications_enabled) {
-        gtk_menu_item_set_label(menuitem, "Уведомления: Вкл");
-    } else {
-        gtk_menu_item_set_label(menuitem, "Уведомления: Выкл");
-    }
-}
-
-void on_change_theme(GtkMenuItem *menuitem, gpointer user_data) {
-    GtkCssProvider *provider = gtk_css_provider_new();
-    const char *current_theme = get_system_theme_chat();
-    const char *new_theme = (g_strcmp0(current_theme, "dark") == 0) ? "light" : "dark";  // Заменили strcmp на g_strcmp0
-    set_chat_theme(provider, new_theme);
-    g_object_unref(provider);
-}
-
-void on_about_clicked(GtkMenuItem *menuitem, gpointer user_data) {
-    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(user_data),
-                                               GTK_DIALOG_DESTROY_WITH_PARENT,
-                                               GTK_MESSAGE_INFO,
-                                               GTK_BUTTONS_OK,
-                                               "Это пример чата на GTK+.");
-    gtk_dialog_run(GTK_DIALOG(dialog));
-    gtk_widget_destroy(dialog);
-}
-
-// Функция определения текущей темы
-const char *get_system_theme_chat() {
-    GSettings *settings = g_settings_new("org.gnome.desktop.interface");
-    if (!settings) {
-        return "light";
-    }
-
-    gchar *theme = g_settings_get_string(settings, "gtk-theme");
-    const char *result = "light";
-
-    if (theme) {
-        if (g_str_has_suffix(theme, "-dark")) {
-            result = "dark";
-        }
-        g_free(theme);
-    }
-
-    g_object_unref(settings);
-    return result;
-}
 
 // Функция установки темы
 void set_chat_theme(GtkCssProvider *provider, const char *theme) {
@@ -205,8 +85,8 @@ void create_chat_window() {
     gtk_box_pack_start(GTK_BOX(header_box), logout_and_settings_box, FALSE, FALSE, 0);  // Отступ между кнопками
 
     GtkWidget *logout_button = gtk_button_new_with_label("Выйти");
-gtk_box_pack_start(GTK_BOX(logout_and_settings_box), logout_button, FALSE, FALSE, 0);  // Убираем большой отступ здесь
-g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window);  // Подключение обработчика
+    gtk_box_pack_start(GTK_BOX(logout_and_settings_box), logout_button, FALSE, FALSE, 0);  // Убираем большой отступ здесь
+    g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window);  // Подключение обработчика
 
 
     // Кнопка настроек
@@ -246,8 +126,6 @@ g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window
     // Панель для кнопки шестеренки
     GtkWidget *gear_button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(main_vertical_box), gear_button_box, FALSE, FALSE, 0);
-
-
 
     // Основной горизонтальный контейнер
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
