@@ -257,4 +257,3 @@ void add_message_to_chat(GtkWidget *chat_container, const char *sender, const ch
 
 
 
-

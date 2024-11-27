@@ -29,3 +29,4 @@ void set_sticker_window(GtkWidget *window) {
 GtkWidget *get_sticker_window() {
     return sticker_window;
 }
+

@@ -50,4 +50,3 @@ void on_sticker_selected(GtkButton *button, gpointer user_data) {
     GtkWidget *popover = gtk_widget_get_parent(GTK_WIDGET(button));
     gtk_popover_popdown(GTK_POPOVER(popover));
 }
-

@@ -19,4 +19,3 @@ clean:
 	rm -f obj/*.o $(OUT)
 
 .PHONY: clean
-
