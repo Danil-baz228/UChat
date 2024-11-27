@@ -5,6 +5,9 @@
 // Переменная для хранения буфера текстового виджета
 GtkTextBuffer *chat_buffer = NULL;
 
+static gboolean notifications_enabled = TRUE; // Уведомления включены по умолчанию
+
+
 char current_language[3] = "RU"; // Начальный язык — русский
 void update_text_labels(gpointer user_data);
 
@@ -82,8 +85,17 @@ void update_text_labels(gpointer user_data) {
     }
 }
 
+void on_toggle_notifications(GtkMenuItem *menuitem, gpointer user_data) {
+    // Переключаем состояние уведомлений
+    notifications_enabled = !notifications_enabled;
 
-
+    // Обновляем текст кнопки
+    if (notifications_enabled) {
+        gtk_menu_item_set_label(menuitem, "Уведомления: Вкл");
+    } else {
+        gtk_menu_item_set_label(menuitem, "Уведомления: Выкл");
+    }
+}
 
 void on_change_theme(GtkMenuItem *menuitem, gpointer user_data) {
     GtkCssProvider *provider = gtk_css_provider_new();
@@ -101,13 +113,6 @@ void on_about_clicked(GtkMenuItem *menuitem, gpointer user_data) {
                                                "Это пример чата на GTK+.");
     gtk_dialog_run(GTK_DIALOG(dialog));
     gtk_widget_destroy(dialog);
-}
-
-
-void on_logout_clicked(GtkButton *button, gpointer user_data) {
-    GtkWidget *window = GTK_WIDGET(user_data);
-    gtk_widget_destroy(window);
-    create_login_window();
 }
 
 // Функция определения текущей темы
@@ -162,11 +167,23 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme) {
     }
 }
 
+void on_logout_clicked(GtkButton *button, gpointer user_data) {
+    GtkWidget *window = GTK_WIDGET(user_data);
+    gtk_widget_hide(window);  // Скрываем текущее окно чата
+    create_login_window();  // Создаем и показываем окно логина
+}
+
+
+void on_window_destroy(GtkWidget *widget, gpointer user_data) {
+    exit(0);  // Завершает программу
+}
+
 void create_chat_window() {
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Чат");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
-    g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
+
+     g_signal_connect(window, "destroy", G_CALLBACK(on_window_destroy), NULL);
 
     // Основной вертикальный контейнер
     GtkWidget *main_vertical_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
@@ -183,17 +200,25 @@ void create_chat_window() {
     GtkWidget *user_label = gtk_label_new(user_label_text);
     gtk_box_pack_start(GTK_BOX(header_box), user_label, TRUE, TRUE, 0);
 
+    // Панель для кнопок (Выйти и Настройки)
+    GtkWidget *logout_and_settings_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(header_box), logout_and_settings_box, FALSE, FALSE, 0);  // Отступ между кнопками
+
     GtkWidget *logout_button = gtk_button_new_with_label("Выйти");
-    gtk_box_pack_end(GTK_BOX(header_box), logout_button, FALSE, FALSE, 0);
-    g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window);
+gtk_box_pack_start(GTK_BOX(logout_and_settings_box), logout_button, FALSE, FALSE, 0);  // Убираем большой отступ здесь
+g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window);  // Подключение обработчика
+
 
     // Кнопка настроек
     GtkWidget *settings_button = gtk_menu_button_new();
     GtkWidget *settings_icon = gtk_image_new_from_icon_name("emblem-system", GTK_ICON_SIZE_BUTTON);
     gtk_button_set_image(GTK_BUTTON(settings_button), settings_icon);
-    gtk_box_pack_end(GTK_BOX(header_box), settings_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(logout_and_settings_box), settings_button, FALSE, FALSE, 0); // Убираем большой отступ здесь
 
-    // Создаем выпадающее меню
+    // Добавим отступы слева, чтобы кнопки переместились вправо
+    gtk_widget_set_margin_start(logout_and_settings_box, 205); // Сдвигаем блок с кнопками вправо на 105 пикселей
+
+    // Создаем выпадающее меню для кнопки настроек
     GtkWidget *settings_menu = gtk_menu_new();
 
     GtkWidget *theme_item = gtk_menu_item_new_with_label("Сменить тему");
@@ -204,16 +229,25 @@ void create_chat_window() {
     g_signal_connect(about_item, "activate", G_CALLBACK(on_about_clicked), window); // Функция для показа информации о программе
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), about_item);
 
-    // Пункт для смены языка
     GtkWidget *language_item = gtk_menu_item_new_with_label("Сменить язык");
     g_signal_connect(language_item, "activate", G_CALLBACK(on_switch_language_clicked), window); // Функция для смены языка
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), language_item);
 
+    // В функции create_chat_window добавьте кнопку "Уведомления" в меню настроек
+    GtkWidget *notifications_item = gtk_menu_item_new_with_label("Уведомления: Вкл");
+    g_signal_connect(notifications_item, "activate", G_CALLBACK(on_toggle_notifications), window);
+    gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), notifications_item);
 
 
     // Устанавливаем меню для кнопки настроек
     gtk_menu_button_set_popup(GTK_MENU_BUTTON(settings_button), settings_menu);
     gtk_widget_show_all(settings_menu);
+
+    // Панель для кнопки шестеренки
+    GtkWidget *gear_button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(main_vertical_box), gear_button_box, FALSE, FALSE, 0);
+
+
 
     // Основной горизонтальный контейнер
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);

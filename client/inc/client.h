@@ -11,6 +11,7 @@ static int chat_window_y = 0;
 
 void set_theme(GtkCssProvider *provider, const char *theme);
 
+void exit_client();
 
 // Объявления функций
 const char *get_system_theme_chat();
@@ -35,8 +36,6 @@ void on_sticker_selected(GtkButton *button, gpointer user_data);
 void hide_sticker_window(GtkWidget *sticker_window, gpointer user_data);
 void update_button_position(GtkButton *button, GtkWidget *sticker_window);
 
-
-
 void set_main_window(GtkWidget *window);
 GtkWidget *get_main_window();
 
@@ -51,5 +50,8 @@ gboolean on_window_moved(GtkWidget *widget, GdkEvent *event, gpointer data);
 void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message);
 int handle_register(const char *username, const char *password);
 int handle_login(const char *username, const char *password);
+
+void on_window_close(GtkWidget *window, gpointer user_data);
+void on_exit_button_clicked(GtkWidget *button, gpointer user_data);
 
 #endif // CLIENT_H
