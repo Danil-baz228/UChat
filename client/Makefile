@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -I./inc `pkg-config --cflags gtk+-3.0 gstreamer-1.0`
 LIBS = `pkg-config --libs gtk+-3.0 gstreamer-1.0`
-SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c src/language.c src/settings.c
+SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c
 OBJ = $(SRC:src/%.c=obj/%.o)
 OUT = client
 
