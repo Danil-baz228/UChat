@@ -56,3 +56,4 @@ void set_sticker_window(GtkWidget *window);
 
 
 #endif // CLIENT_H
+

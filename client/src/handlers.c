@@ -264,3 +264,4 @@ void on_send_message_clicked(GtkWidget *widget, gpointer data) {
         gtk_widget_destroy(dialog);
     }
 }
+
