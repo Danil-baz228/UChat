@@ -3,7 +3,6 @@
 
 #include <gtk/gtk.h>
 #include <gio/gio.h>
-#include <gtk/gtk.h>
 
 #define BUFFER_SIZE 256
 

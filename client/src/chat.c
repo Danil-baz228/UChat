@@ -356,3 +356,4 @@ void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
     update_text_labels(user_data); // Функция обновления меток и текста
 }
 
+
