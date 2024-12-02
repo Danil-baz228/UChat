@@ -4,17 +4,9 @@
 // Переменная для хранения буфера текстового виджета
 GtkTextBuffer *chat_buffer = NULL;
 
-//void switch_language(GtkButton *button, gpointer user_data) {
-//    if (g_strcmp0(current_language, "RU") == 0) {
-//        g_strlcpy(current_language, "EN", sizeof(current_language));
-//        gtk_button_set_label(button, "Switch to Russian");
-//    } else {
-//        g_strlcpy(current_language, "RU", sizeof(current_language));
-//        gtk_button_set_label(button, "Switch to English");
-//    }
-//
-//    update_text_labels(user_data); // Обновление всех меток в интерфейсе
-//}
+extern char current_language[3];
+
+char current_language[3] = "UA"; // Start with Ukrainian
 
 // Функция установки темы
 void set_chat_theme(GtkCssProvider *provider, const char *theme) {
@@ -80,7 +72,7 @@ void create_chat_window() {
     gtk_box_pack_start(GTK_BOX(main_vertical_box), header_box, FALSE, FALSE, 0);
 
     char user_label_text[128];
-    snprintf(user_label_text, sizeof(user_label_text), "Пользователь: %s", current_user);
+    snprintf(user_label_text, sizeof(user_label_text), "Користувач: %s", current_user);
     GtkWidget *user_label = gtk_label_new(user_label_text);
 
     // Устанавливаем выравнивание метки пользователя влево
@@ -105,19 +97,19 @@ void create_chat_window() {
     // Создаем выпадающее меню для кнопки настроек
     GtkWidget *settings_menu = gtk_menu_new();
 
-    GtkWidget *theme_item = gtk_menu_item_new_with_label("Сменить тему");
+    GtkWidget *theme_item = gtk_menu_item_new_with_label("Змінити тему");
     g_signal_connect(theme_item, "activate", G_CALLBACK(on_change_theme), window); // Функция для смены темы
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), theme_item);
 
-    GtkWidget *about_item = gtk_menu_item_new_with_label("О программе");
+    GtkWidget *about_item = gtk_menu_item_new_with_label("Про програму");
     g_signal_connect(about_item, "activate", G_CALLBACK(on_about_clicked), window); // Функция для показа информации о программе
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), about_item);
 
-    GtkWidget *language_item = gtk_menu_item_new_with_label("Сменить язык");
+    GtkWidget *language_item = gtk_menu_item_new_with_label("Змінити мову");
     g_signal_connect(language_item, "activate", G_CALLBACK(on_switch_language_clicked), window); // Функция для смены языка
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), language_item);
 
-    GtkWidget *logout_item = gtk_menu_item_new_with_label("Выйти");
+    GtkWidget *logout_item = gtk_menu_item_new_with_label("Вийти");
     g_signal_connect(logout_item, "activate", G_CALLBACK(on_logout_clicked), window);
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), logout_item);
 
@@ -167,11 +159,11 @@ void create_chat_window() {
     gtk_box_pack_start(GTK_BOX(right_box), message_box, FALSE, FALSE, 0);
 
     GtkWidget *entry_message = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Введите сообщение");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Введіть повідомлення");
     gtk_widget_set_hexpand(entry_message, TRUE);
     gtk_box_pack_start(GTK_BOX(message_box), entry_message, TRUE, TRUE, 0);
 
-    GtkWidget *button_send = gtk_button_new_with_label("Отправить");
+    GtkWidget *button_send = gtk_button_new_with_label("Надіслати");
     gtk_box_pack_start(GTK_BOX(message_box), button_send, FALSE, FALSE, 0);
 
     // Кнопка для выбора стикеров
@@ -181,6 +173,13 @@ void create_chat_window() {
     // Связь объектов с данными окна для обновления интерфейса
     g_object_set_data(G_OBJECT(window), "send_button", button_send);
     g_object_set_data(G_OBJECT(window), "sticker_button", sticker_button);
+
+	        // Добавляем в g_object данные для доступа в update_text_labels
+    g_object_set_data(G_OBJECT(window), "window", window);
+    g_object_set_data(G_OBJECT(window), "user_label", user_label);
+    g_object_set_data(G_OBJECT(window), "theme_item", theme_item);
+    g_object_set_data(G_OBJECT(window), "language_item", language_item);
+    g_object_set_data(G_OBJECT(window), "logout_item", logout_item);
 
 
     // Создаем GtkPopover для стикеров
@@ -301,58 +300,74 @@ void on_about_clicked(GtkMenuItem *menuitem, gpointer user_data) {
     gtk_widget_destroy(dialog);
 }
 
-extern char current_language[3];
-
-char current_language[3] = "RU"; // Начальный язык — русский
-void update_text_labels(gpointer user_data);
-
 void update_text_labels(gpointer user_data) {
     GtkWidget *window = GTK_WIDGET(user_data);
+    gtk_window_set_title(GTK_WINDOW(window), g_strcmp0(current_language, "UA") == 0 ? "Чат" : "Chat");
 
-    // Получаем указатели на элементы интерфейса
+    // Retrieve widget pointers for updating labels
     GtkWidget *logout_button = g_object_get_data(G_OBJECT(window), "logout_button");
     GtkWidget *send_button = g_object_get_data(G_OBJECT(window), "send_button");
     GtkWidget *sticker_button = g_object_get_data(G_OBJECT(window), "sticker_button");
     GtkWidget *user_label = g_object_get_data(G_OBJECT(window), "user_label");
-    GtkWidget *entry_message = g_object_get_data(G_OBJECT(window), "entry_message"); // Поле ввода сообщения
+    GtkWidget *entry_message = g_object_get_data(G_OBJECT(window), "entry_message");
 
-    // Обновляем текст в зависимости от текущего языка
-    if (g_strcmp0(current_language, "RU") == 0) {
-        // Кнопки
-        gtk_button_set_label(GTK_BUTTON(logout_button), "Выйти");
-        gtk_button_set_label(GTK_BUTTON(send_button), "Отправить");
+    // Update the menu items based on the selected language
+    GtkWidget *theme_item = g_object_get_data(G_OBJECT(window), "theme_item");
+    GtkWidget *about_item = g_object_get_data(G_OBJECT(window), "about_item");
+    GtkWidget *language_item = g_object_get_data(G_OBJECT(window), "language_item");
+    GtkWidget *notifications_item = g_object_get_data(G_OBJECT(window), "notifications_item");
+    GtkWidget *logout_item = g_object_get_data(G_OBJECT(window), "logout_item");
+
+    if (g_strcmp0(current_language, "UA") == 0) {
+        gtk_menu_item_set_label(GTK_MENU_ITEM(theme_item), "Змінити тему");
+        gtk_menu_item_set_label(GTK_MENU_ITEM(about_item), "Про програму");
+        gtk_menu_item_set_label(GTK_MENU_ITEM(language_item), "Змінити мову: UA");
+        gtk_menu_item_set_label(GTK_MENU_ITEM(logout_item), "Вийти");
+    } else { // English
+        gtk_menu_item_set_label(GTK_MENU_ITEM(theme_item), "Change Theme");
+        gtk_menu_item_set_label(GTK_MENU_ITEM(about_item), "About");
+        gtk_menu_item_set_label(GTK_MENU_ITEM(language_item), "Switch Language: ENG");
+        gtk_menu_item_set_label(GTK_MENU_ITEM(logout_item), "Logout");
+    }
+
+    // Update button labels and placeholder texts
+    if (g_strcmp0(current_language, "UA") == 0) {
+        // Buttons
+        gtk_button_set_label(GTK_BUTTON(logout_button), "Вийти");
+        gtk_button_set_label(GTK_BUTTON(send_button), "Надіслати");
         gtk_button_set_label(GTK_BUTTON(sticker_button), "🙂");
 
-        // Обновление метки пользователя
+        // Update user label
         if (user_label) {
             char user_label_text[128];
-            snprintf(user_label_text, sizeof(user_label_text), "Пользователь: %s", current_user);
+            snprintf(user_label_text, sizeof(user_label_text), "Користувач: %s", current_user);
             gtk_label_set_text(GTK_LABEL(user_label), user_label_text);
         }
 
-        // Обновление текста-заполнителя для поля ввода сообщения
+        // Update placeholder text
         if (entry_message) {
-            gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Введите сообщение");
+            gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Введіть повідомлення");
         }
-    } else { // "EN"
-        // Кнопки
+    } else { // English
+        // Buttons
         gtk_button_set_label(GTK_BUTTON(logout_button), "Logout");
         gtk_button_set_label(GTK_BUTTON(send_button), "Send");
         gtk_button_set_label(GTK_BUTTON(sticker_button), "🙂");
 
-        // Обновление метки пользователя
+        // Update user label
         if (user_label) {
             char user_label_text[128];
             snprintf(user_label_text, sizeof(user_label_text), "User: %s", current_user);
             gtk_label_set_text(GTK_LABEL(user_label), user_label_text);
         }
 
-        // Обновление текста-заполнителя для поля ввода сообщения
+        // Update placeholder text
         if (entry_message) {
             gtk_entry_set_placeholder_text(GTK_ENTRY(entry_message), "Enter message");
         }
     }
 }
+
 
 void on_delete_message_clicked(GtkButton *button, gpointer user_data) {
     int message_id = GPOINTER_TO_INT(user_data);
@@ -373,17 +388,14 @@ void on_delete_message_clicked(GtkButton *button, gpointer user_data) {
     }
 }
 
-
-
-
 void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
-    // Переключаем язык между "RU" и "EN"
-    if (g_strcmp0(current_language, "RU") == 0) {
-        g_strlcpy(current_language, "EN", sizeof(current_language));
+    if (g_strcmp0(current_language, "UA") == 0) {
+        current_language[0] = 'E';  // Change to English
+        current_language[1] = 'N';
     } else {
-        g_strlcpy(current_language, "RU", sizeof(current_language));
+        current_language[0] = 'U';  // Change to Ukrainian
+        current_language[1] = 'A';
     }
-
-    // Обновляем текстовые элементы интерфейса
-    update_text_labels(user_data); // Функция обновления меток и текста
+    update_text_labels(user_data);  // Update UI elements
 }
+
