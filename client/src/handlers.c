@@ -138,11 +138,10 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
     }
 }
 
-
 void load_chat_messages(GtkWidget *chat_container, const char *current_user, const char *selected_user) {
     char response[2048] = {0};
     if (send_to_server("GET_MESSAGES", current_user, selected_user, "", response, sizeof(response)) == 0) {
-        // Очистить контейнер сообщений перед загрузкой новых
+        // Очистка контейнера сообщений
         GList *children = gtk_container_get_children(GTK_CONTAINER(chat_container));
         for (GList *child = children; child != NULL; child = child->next) {
             gtk_widget_destroy(GTK_WIDGET(child->data));
@@ -152,14 +151,22 @@ void load_chat_messages(GtkWidget *chat_container, const char *current_user, con
         // Разбить ответ сервера на строки
         char *line = strtok(response, "\n");
         while (line != NULL) {
+            int message_id;
             char sender[64], time[64], message[1024];
-            if (sscanf(line, "%63s %63s %[^\n]", sender, time, message) == 3) {
-                add_message_to_chat(chat_container, sender, time, message);
+
+            // Извлекаем данные, включая message_id
+            if (sscanf(line, "%d|%63[^|]|%63[^|]|%1023[^\n]", &message_id, sender, time, message) == 4) {
+                add_message_to_chat(chat_container, sender, time, message, message_id);
+            } else {
+                fprintf(stderr, "Ошибка парсинга сообщения: %s\n", line);
             }
             line = strtok(NULL, "\n");
         }
+    } else {
+        fprintf(stderr, "Ошибка получения сообщений с сервера.\n");
     }
 }
+
 gboolean update_chat_window(gpointer data) {
     GtkWidget *window = GTK_WIDGET(data);
     GtkWidget *chat_container = g_object_get_data(G_OBJECT(window), "chat_container");

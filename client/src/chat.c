@@ -25,6 +25,8 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme) {
         "entry:focus { border-color: #3B4252; }"
         "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 10px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
         "button:hover { background-color: #81A1C1; }"
+        "button#delete-button { background-color: transparent; border: none; color: red; font-size: 16px; padding: 0; margin: 0; }"
+        "button#delete-button:hover { color: darkred; }"
         "scrolledwindow { background-color: #D8DEE9; border-radius: 5px; }"
         "listbox { background-color: #D8DEE9; color: #2E3440; border-radius: 5px; padding: 10px; margin-top: 10px; }"
         "listbox row:hover { background-color: #B2B9C0; }";
@@ -36,6 +38,8 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme) {
         "entry:focus { border-color: #81A1C1; }"
         "button { background-color: #5E81AC; color: white; border-radius: 5px; padding: 10px 20px; font-weight: bold; transition: background-color 0.3s ease; font-size: 14px; }"
         "button:hover { background-color: #81A1C1; }"
+        "button#delete-button { background-color: transparent; border: none; color: red; font-size: 16px; padding: 0; margin: 0; }"
+        "button#delete-button:hover { color: darkred; }"
         "scrolledwindow { background-color: #434C5E; border-radius: 5px; }"
         "listbox { background-color: #434C5E; color: #D8DEE9; border-radius: 5px; padding: 10px; margin-top: 10px; }"
         "listbox row:hover { background-color: #3B4252; }";
@@ -46,6 +50,7 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme) {
         gtk_css_provider_load_from_data(provider, light_css, -1, NULL);
     }
 }
+
 
 void on_logout_clicked(GtkButton *button, gpointer user_data) {
     GtkWidget *window = GTK_WIDGET(user_data);
@@ -221,35 +226,40 @@ void create_chat_window() {
     g_signal_connect(button_send, "clicked", G_CALLBACK(on_send_message_clicked), window);
 }
 
-
-
-void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message) {
-    // Основной контейнер для одного сообщения
-    GtkWidget *message_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message, int message_id) {
+    GtkWidget *message_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_widget_set_margin_top(message_box, 5);
     gtk_widget_set_margin_bottom(message_box, 5);
     gtk_widget_set_margin_start(message_box, 10);
     gtk_widget_set_margin_end(message_box, 10);
 
-    // Метка с отправителем и временем
     char sender_and_time[128];
     snprintf(sender_and_time, sizeof(sender_and_time), "%s [%s]", sender, time);
     GtkWidget *meta_label = gtk_label_new(sender_and_time);
     gtk_widget_set_halign(meta_label, GTK_ALIGN_START);
 
-    // Метка с текстом сообщения
     GtkWidget *message_label = gtk_label_new(message);
     gtk_label_set_line_wrap(GTK_LABEL(message_label), TRUE);
     gtk_widget_set_halign(message_label, GTK_ALIGN_START);
 
-    // Добавить метки в контейнер сообщения
-    gtk_box_pack_start(GTK_BOX(message_box), meta_label, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(message_box), message_label, FALSE, FALSE, 0);
+    // Кнопка для удаления сообщения
+    GtkWidget *delete_button = gtk_button_new_with_label("❌");
+    gtk_widget_set_name(delete_button, "delete-button"); // Задаём имя для CSS
 
-    // Добавить контейнер сообщения в общий контейнер чата
+    // Передаём message_id в обработчик
+    g_signal_connect(delete_button, "clicked", G_CALLBACK(on_delete_message_clicked), GINT_TO_POINTER(message_id));
+
+    GtkWidget *buttons_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+    gtk_box_pack_start(GTK_BOX(buttons_box), meta_label, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(buttons_box), message_label, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(buttons_box), delete_button, FALSE, FALSE, 0);
+
+    gtk_box_pack_start(GTK_BOX(message_box), buttons_box, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(chat_container), message_box, FALSE, FALSE, 0);
     gtk_widget_show_all(chat_container);
 }
+
+
 
 static gboolean notifications_enabled = TRUE; // Уведомления включены по умолчанию
 
@@ -344,6 +354,28 @@ void update_text_labels(gpointer user_data) {
     }
 }
 
+void on_delete_message_clicked(GtkButton *button, gpointer user_data) {
+    int message_id = GPOINTER_TO_INT(user_data);
+    printf("Request to delete message with ID: %d\n", message_id);
+
+    char response[256];
+
+    if (send_to_server("DELETE_MESSAGE", g_strdup_printf("%d", message_id), "", "", response, sizeof(response)) == 0) {
+        printf("Server response: %s\n", response);
+
+        if (strcmp(response, "OK") == 0) {
+            gtk_widget_destroy(gtk_widget_get_parent(GTK_WIDGET(button))); // Удаляем виджет сообщения
+        } else {
+            fprintf(stderr, "Failed to delete message on server. Response: %s\n", response);
+        }
+    } else {
+        fprintf(stderr, "Failed to send DELETE_MESSAGE command to server.\n");
+    }
+}
+
+
+
+
 void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
     // Переключаем язык между "RU" и "EN"
     if (g_strcmp0(current_language, "RU") == 0) {
@@ -355,5 +387,3 @@ void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
     // Обновляем текстовые элементы интерфейса
     update_text_labels(user_data); // Функция обновления меток и текста
 }
-
-

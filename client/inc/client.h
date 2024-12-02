@@ -3,9 +3,7 @@
 
 #include <gtk/gtk.h>
 #include <gio/gio.h>
-
-#define BUFFER_SIZE 256
-
+#include <gtk/gtk.h>
 
 extern char current_user[64];
 extern GtkTextBuffer *chat_buffer;
@@ -17,8 +15,10 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme);
 void create_chat_window();
 void on_logout_clicked(GtkButton *button, gpointer user_data);
 void on_window_destroy(GtkWidget *widget, gpointer user_data);
-void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message);
+void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message, int message_id);
 
+
+void on_delete_message_clicked(GtkButton *button, gpointer user_data);
 // client.c
 const char *get_system_theme();
 int send_to_server(const char *command, const char *arg1, const char *arg2, const char *arg3, char *response, size_t response_size);

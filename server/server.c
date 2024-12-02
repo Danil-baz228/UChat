@@ -195,7 +195,7 @@ int send_message(sqlite3 *db, const char *sender, const char *receiver, const ch
     return 0;
 }
 int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result, size_t result_size) {
-    const char *sql = "SELECT u1.username AS sender_name, m.timestamp, m.message "
+    const char *sql = "SELECT m.id, u1.username AS sender_name, m.timestamp, m.message "
                       "FROM messages m "
                       "JOIN users u1 ON m.sender_id = u1.id "
                       "JOIN users u2 ON m.receiver_id = u2.id "
@@ -218,12 +218,13 @@ int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result
     result[0] = '\0'; // Инициализация результата
 
     while (sqlite3_step(stmt) == SQLITE_ROW) {
-        const char *sender_name = (const char *)sqlite3_column_text(stmt, 0);
-        const char *timestamp = (const char *)sqlite3_column_text(stmt, 1);
-        const char *message = (const char *)sqlite3_column_text(stmt, 2);
+        int message_id = sqlite3_column_int(stmt, 0); // ID сообщения
+        const char *sender_name = (const char *)sqlite3_column_text(stmt, 1);
+        const char *timestamp = (const char *)sqlite3_column_text(stmt, 2);
+        const char *message = (const char *)sqlite3_column_text(stmt, 3);
 
         char formatted_message[512];
-        snprintf(formatted_message, sizeof(formatted_message), "%s %s %s\n", sender_name, timestamp, message);
+        snprintf(formatted_message, sizeof(formatted_message), "%d|%s|%s|%s\n", message_id, sender_name, timestamp, message);
 
         // Конкатенация в результат
         strncat(result, formatted_message, result_size - strlen(result) - 1);
@@ -231,6 +232,33 @@ int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result
 
     sqlite3_finalize(stmt);
     return 0;
+}
+
+
+int delete_message(sqlite3 *db, int message_id) {
+    const char *sql = "DELETE FROM messages WHERE id = ?;";
+    sqlite3_stmt *stmt;
+
+    printf("Attempting to delete message with ID: %d\n", message_id);
+
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Error preparing delete statement: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_int(stmt, 1, message_id);
+
+    rc = sqlite3_step(stmt);
+    if (rc == SQLITE_DONE) {
+        printf("Message with ID %d deleted successfully.\n", message_id);
+        sqlite3_finalize(stmt);
+        return 0;
+    } else {
+        fprintf(stderr, "Error deleting message: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
 }
 
 
@@ -322,6 +350,21 @@ void handle_client(int client_sock, sqlite3 *db) {
             write(client_sock, response, strlen(response));
         }
     }
+
+    else if (strcmp(command, "DELETE_MESSAGE") == 0) {
+    int message_id = atoi(arg1); // ID сообщения, передается первым аргументом
+    printf("DELETE_MESSAGE command received. Message ID: %d\n", message_id);
+
+    if (delete_message(db, message_id) == 0) {
+        const char *response = "OK";
+        write(client_sock, response, strlen(response));
+    } else {
+        const char *response = "ERROR";
+        write(client_sock, response, strlen(response));
+    }
+}
+
+
     else {
         const char *response = "UNKNOWN_COMMAND";
         write(client_sock, response, strlen(response));
