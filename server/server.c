@@ -94,6 +94,49 @@ int search_users(sqlite3 *db, const char *query, char *result, size_t result_siz
     sqlite3_finalize(stmt);
     return 0;
 }
+
+int search_messages(sqlite3 *db, const char *query, const char *user1, const char *user2, char *result, size_t result_size) {
+    const char *sql = "SELECT u1.username AS sender_name, m.timestamp, m.message "
+                      "FROM messages m "
+                      "JOIN users u1 ON m.sender_id = u1.id "
+                      "JOIN users u2 ON m.receiver_id = u2.id "
+                      "WHERE m.message LIKE ? AND (u1.username = ? OR u2.username = ?) "
+                      "ORDER BY m.timestamp ASC;";
+    sqlite3_stmt *stmt;
+
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Error preparing statement for searching messages: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    // Формируем запрос с учетом ключевого слова
+    char like_query[BUFFER_SIZE];
+    snprintf(like_query, sizeof(like_query), "%%%s%%", query);
+
+    sqlite3_bind_text(stmt, 1, like_query, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, user1, -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, user2, -1, SQLITE_STATIC);
+
+    result[0] = '\0'; // Инициализация результата
+
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        const char *sender_name = (const char *)sqlite3_column_text(stmt, 0);
+        const char *timestamp = (const char *)sqlite3_column_text(stmt, 1);
+        const char *message = (const char *)sqlite3_column_text(stmt, 2);
+
+        char formatted_message[512];
+        snprintf(formatted_message, sizeof(formatted_message), "%s %s %s\n", sender_name, timestamp, message);
+
+        // Конкатенация в результат
+        strncat(result, formatted_message, result_size - strlen(result) - 1);
+    }
+
+    sqlite3_finalize(stmt);
+    return 0;
+}
+
+
 int send_message(sqlite3 *db, const char *sender, const char *receiver, const char *message) {
     const char *sql_get_id = "SELECT id FROM users WHERE username = ?;";
     sqlite3_stmt *stmt;

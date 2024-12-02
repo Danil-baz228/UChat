@@ -53,7 +53,6 @@ void on_logout_clicked(GtkButton *button, gpointer user_data) {
     create_login_window();  // Создаем и показываем окно логина
 }
 
-
 void on_window_destroy(GtkWidget *widget, gpointer user_data) {
     exit(0);  // Завершает программу
 }
@@ -78,15 +77,15 @@ void create_chat_window() {
     char user_label_text[128];
     snprintf(user_label_text, sizeof(user_label_text), "Пользователь: %s", current_user);
     GtkWidget *user_label = gtk_label_new(user_label_text);
-    gtk_box_pack_start(GTK_BOX(header_box), user_label, TRUE, TRUE, 0);
+
+    // Устанавливаем выравнивание метки пользователя влево
+    gtk_widget_set_halign(user_label, GTK_ALIGN_START);
+    gtk_box_pack_start(GTK_BOX(header_box), user_label, TRUE, TRUE, 15);
+
 
     // Панель для кнопок (Выйти и Настройки)
     GtkWidget *logout_and_settings_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(header_box), logout_and_settings_box, FALSE, FALSE, 0);  // Отступ между кнопками
-
-    GtkWidget *logout_button = gtk_button_new_with_label("Выйти");
-    gtk_box_pack_start(GTK_BOX(logout_and_settings_box), logout_button, FALSE, FALSE, 0);  // Убираем большой отступ здесь
-    g_signal_connect(logout_button, "clicked", G_CALLBACK(on_logout_clicked), window);  // Подключение обработчика
 
 
     // Кнопка настроек
@@ -96,7 +95,7 @@ void create_chat_window() {
     gtk_box_pack_start(GTK_BOX(logout_and_settings_box), settings_button, FALSE, FALSE, 0); // Убираем большой отступ здесь
 
     // Добавим отступы слева, чтобы кнопки переместились вправо
-    gtk_widget_set_margin_start(logout_and_settings_box, 205); // Сдвигаем блок с кнопками вправо на 105 пикселей
+    gtk_widget_set_margin_start(logout_and_settings_box, 350); // Сдвигаем блок с кнопками вправо на 105 пикселей
 
     // Создаем выпадающее меню для кнопки настроек
     GtkWidget *settings_menu = gtk_menu_new();
@@ -113,11 +112,9 @@ void create_chat_window() {
     g_signal_connect(language_item, "activate", G_CALLBACK(on_switch_language_clicked), window); // Функция для смены языка
     gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), language_item);
 
-    // В функции create_chat_window добавьте кнопку "Уведомления" в меню настроек
-    GtkWidget *notifications_item = gtk_menu_item_new_with_label("Уведомления: Вкл");
-    g_signal_connect(notifications_item, "activate", G_CALLBACK(on_toggle_notifications), window);
-    gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), notifications_item);
-
+    GtkWidget *logout_item = gtk_menu_item_new_with_label("Выйти");
+    g_signal_connect(logout_item, "activate", G_CALLBACK(on_logout_clicked), window);
+    gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), logout_item);
 
     // Устанавливаем меню для кнопки настроек
     gtk_menu_button_set_popup(GTK_MENU_BUTTON(settings_button), settings_menu);
@@ -177,7 +174,6 @@ void create_chat_window() {
     gtk_box_pack_start(GTK_BOX(message_box), sticker_button, FALSE, FALSE, 0);
 
     // Связь объектов с данными окна для обновления интерфейса
-    g_object_set_data(G_OBJECT(window), "logout_button", logout_button);
     g_object_set_data(G_OBJECT(window), "send_button", button_send);
     g_object_set_data(G_OBJECT(window), "sticker_button", sticker_button);
 
@@ -275,18 +271,6 @@ const char *get_system_theme_chat() {
 
     g_object_unref(settings);
     return result;
-}
-
-void on_toggle_notifications(GtkMenuItem *menuitem, gpointer user_data) {
-    // Переключаем состояние уведомлений
-    notifications_enabled = !notifications_enabled;
-
-    // Обновляем текст кнопки
-    if (notifications_enabled) {
-        gtk_menu_item_set_label(menuitem, "Уведомления: Вкл");
-    } else {
-        gtk_menu_item_set_label(menuitem, "Уведомления: Выкл");
-    }
 }
 
 void on_change_theme(GtkMenuItem *menuitem, gpointer user_data) {
