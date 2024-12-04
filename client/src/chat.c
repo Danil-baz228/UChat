@@ -133,8 +133,12 @@ void create_chat_window() {
 	gtk_widget_set_vexpand(left_panel, TRUE);
 	gtk_box_pack_start(GTK_BOX(main_box), left_panel, FALSE, TRUE, 0);
 
-	GtkWidget *top_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-	gtk_box_pack_start(GTK_BOX(left_panel), top_container, FALSE, FALSE, 0);
+    GtkWidget *top_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0); // Убираем лишний spacing
+    gtk_box_pack_start(GTK_BOX(left_panel), top_container, FALSE, FALSE, 0);
+    gtk_widget_set_margin_top(top_container, 0); // Убираем отступ сверху
+    gtk_widget_set_margin_bottom(left_panel, 0); // Убираем отступ снизу
+
+
 
 	// Объявляем и создаем список пользователей перед вызовом add_search_bar
 	GtkWidget *users_list = gtk_list_box_new();
