@@ -56,6 +56,7 @@ void set_main_window(GtkWidget *window);
 void set_chat_window(GtkWidget *window);
 void set_sticker_window(GtkWidget *window);
 
+void add_search_bar(GtkWidget *main_vertical_box, GtkWidget *users_list);
 
 #endif // CLIENT_H
 

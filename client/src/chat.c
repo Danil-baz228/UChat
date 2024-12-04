@@ -84,6 +84,9 @@ void create_chat_window() {
     GtkWidget *logout_and_settings_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(header_box), logout_and_settings_box, FALSE, FALSE, 0);  // Отступ между кнопками
 
+    gtk_box_set_homogeneous(GTK_BOX(header_box), FALSE); // Чтобы элементы не растягивались
+	gtk_box_set_homogeneous(GTK_BOX(logout_and_settings_box), FALSE); // Для кнопок
+
 
     // Кнопка настроек
     GtkWidget *settings_button = gtk_menu_button_new();
@@ -125,15 +128,28 @@ void create_chat_window() {
     GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(main_vertical_box), main_box, TRUE, TRUE, 0);
 
-    // Список пользователей (левая панель)
-    GtkWidget *users_list = gtk_list_box_new();
-    gtk_widget_set_vexpand(users_list, TRUE);
+	// Список пользователей (левая панель)
+	GtkWidget *left_panel = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
+	gtk_widget_set_vexpand(left_panel, TRUE);
+	gtk_box_pack_start(GTK_BOX(main_box), left_panel, FALSE, TRUE, 0);
 
-    GtkWidget *scrolled_users = gtk_scrolled_window_new(NULL, NULL);
-    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_users), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-    gtk_widget_set_size_request(scrolled_users, 200, -1);
-    gtk_container_add(GTK_CONTAINER(scrolled_users), users_list);
-    gtk_box_pack_start(GTK_BOX(main_box), scrolled_users, FALSE, TRUE, 0);
+	GtkWidget *top_container = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+	gtk_box_pack_start(GTK_BOX(left_panel), top_container, FALSE, FALSE, 0);
+
+	// Объявляем и создаем список пользователей перед вызовом add_search_bar
+	GtkWidget *users_list = gtk_list_box_new();
+	gtk_widget_set_vexpand(users_list, TRUE);
+
+	// Теперь можно передать users_list в add_search_bar
+	add_search_bar(top_container, users_list);
+
+	// Добавляем users_list в прокручиваемую область
+	GtkWidget *scrolled_users = gtk_scrolled_window_new(NULL, NULL);
+	gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_users), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+	gtk_widget_set_size_request(scrolled_users, 150, -1);
+
+	gtk_container_add(GTK_CONTAINER(scrolled_users), users_list);
+	gtk_box_pack_start(GTK_BOX(left_panel), scrolled_users, TRUE, TRUE, 0);
 
     g_signal_connect(users_list, "row-selected", G_CALLBACK(on_user_selected), window);
 
@@ -224,6 +240,8 @@ void create_chat_window() {
 
     g_signal_connect(button_send, "clicked", G_CALLBACK(on_send_message_clicked), window);
 }
+
+
 
 void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message, int message_id) {
     GtkWidget *message_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
@@ -399,3 +417,30 @@ void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
     update_text_labels(user_data);  // Update UI elements
 }
 
+void on_search_entry_changed(GtkSearchEntry *entry, gpointer user_data) {
+    GtkWidget *users_list = GTK_WIDGET(user_data);
+    const char *search_text = gtk_entry_get_text(GTK_ENTRY(entry));
+
+    // Пройдёмся по всем строкам в списке
+    GList *children = gtk_container_get_children(GTK_CONTAINER(users_list));
+    for (GList *l = children; l != NULL; l = l->next) {
+        GtkWidget *row = GTK_WIDGET(l->data);
+        const char *label_text = gtk_label_get_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(row))));
+
+        // Показываем строку, если она содержит текст поиска, игнорируя регистр
+        if (g_strrstr(g_ascii_strdown(label_text, -1), g_ascii_strdown(search_text, -1)) != NULL) {
+            gtk_widget_show(row);
+        } else {
+            gtk_widget_hide(row);
+        }
+    }
+
+    g_list_free(children);
+}
+
+void add_search_bar(GtkWidget *main_vertical_box, GtkWidget *users_list) {
+    GtkWidget *search_bar = gtk_search_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(search_bar), "Поиск контактов...");
+    gtk_box_pack_start(GTK_BOX(main_vertical_box), search_bar, FALSE, FALSE, 0);
+    g_signal_connect(search_bar, "search-changed", G_CALLBACK(on_search_entry_changed), users_list);
+}
