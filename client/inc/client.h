@@ -16,8 +16,9 @@ void create_chat_window();
 void on_logout_clicked(GtkButton *button, gpointer user_data);
 void on_window_destroy(GtkWidget *widget, gpointer user_data);
 void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message, int message_id);
+void *listen_to_server(void *data);
 
-
+void on_edit_message_clicked(GtkButton *button, gpointer user_data);
 void on_delete_message_clicked(GtkButton *button, gpointer user_data);
 // client.c
 const char *get_system_theme();

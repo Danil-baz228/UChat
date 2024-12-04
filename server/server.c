@@ -10,6 +10,22 @@
 #define PORT 9090
 #define BUFFER_SIZE 256
 
+#define MAX_CLIENTS 100
+int client_sockets[MAX_CLIENTS];
+int client_count = 0;
+
+
+
+void broadcast_notification(const char *message, int exclude_sock) {
+    for (int i = 0; i < client_count; i++) {
+        if (client_sockets[i] != exclude_sock) { // Не отправляем уведомление отправителю
+            if (write(client_sockets[i], message, strlen(message)) < 0) {
+                fprintf(stderr, "Failed to send notification to client %d\n", client_sockets[i]);
+            }
+        }
+    }
+}
+
 // Функция для обработки ошибок SQLite
 void check_sqlite_error(int rc, const char *message, sqlite3 *db) {
     if (rc != SQLITE_OK) {
@@ -171,7 +187,7 @@ int search_messages(sqlite3 *db, const char *query, const char *user1, const cha
 }
 
 
-int send_message(sqlite3 *db, const char *sender, const char *receiver, const char *message) {
+int send_message(sqlite3 *db, const char *sender, const char *receiver, const char *message, int client_sock) {
     const char *sql_get_id = "SELECT id FROM users WHERE username = ?;";
     sqlite3_stmt *stmt;
     int sender_id = -1, receiver_id = -1;
@@ -215,6 +231,9 @@ int send_message(sqlite3 *db, const char *sender, const char *receiver, const ch
 
         if (sqlite3_step(stmt) == SQLITE_DONE) {
             printf("Message from '%s' to '%s' successfully inserted into the database.\n", sender, receiver);
+
+            // Отправляем уведомление клиентам
+            broadcast_notification("NEW_MESSAGE", client_sock);
         } else {
             fprintf(stderr, "Error inserting message: %s\n", sqlite3_errmsg(db));
             sqlite3_finalize(stmt);
@@ -228,6 +247,8 @@ int send_message(sqlite3 *db, const char *sender, const char *receiver, const ch
 
     return 0;
 }
+
+
 int get_messages(sqlite3 *db, const char *user1, const char *user2, char *result, size_t result_size) {
     const char *sql = "SELECT m.id, u1.username AS sender_name, m.timestamp, m.message "
                       "FROM messages m "
@@ -295,6 +316,31 @@ int delete_message(sqlite3 *db, int message_id) {
     }
 }
 
+int edit_message(sqlite3 *db, int message_id, const char *new_message) {
+    const char *sql = "UPDATE messages SET message = ? WHERE id = ?;";
+    sqlite3_stmt *stmt;
+
+    printf("Updating message ID=%d with new text: %s\n", message_id, new_message);
+
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "Error preparing SQL statement: %s\n", sqlite3_errmsg(db));
+        return -1;
+    }
+
+    sqlite3_bind_text(stmt, 1, new_message, -1, SQLITE_STATIC);
+    sqlite3_bind_int(stmt, 2, message_id);
+
+    rc = sqlite3_step(stmt);
+    if (rc == SQLITE_DONE) {
+        sqlite3_finalize(stmt);
+        return 0;
+    } else {
+        fprintf(stderr, "Error executing SQL statement: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return -1;
+    }
+}
 
 
 
@@ -360,14 +406,49 @@ void handle_client(int client_sock, sqlite3 *db) {
             write(client_sock, response, strlen(response));
         }
     } else if (strcmp(command, "SEND_MESSAGE") == 0) {
-        if (send_message(db, arg1, arg2, arg3) == 0) {
+        if (send_message(db, arg1, arg2, arg3, client_sock) == 0) { // Передаем client_sock
             const char *response = "OK";
             write(client_sock, response, strlen(response));
         } else {
             const char *response = "ERROR";
             write(client_sock, response, strlen(response));
         }
-    } else if (strcmp(command, "GET_MESSAGES") == 0) {
+    } else if (strcmp(command, "EDIT_MESSAGE") == 0) {
+        int message_id;
+        char new_message[BUFFER_SIZE];
+
+        // Найдите разделитель "|" и извлеките ID и сообщение
+        char *delimiter = strchr(arg1, '|');
+        if (delimiter) {
+            *delimiter = '\0'; // Разделяем строку
+            message_id = atoi(arg1); // Получаем ID сообщения
+            strcpy(new_message, delimiter + 1); // Получаем текст сообщения
+
+            // Убираем кавычки, если они есть
+            size_t len = strlen(new_message);
+            if (new_message[0] == '"' && new_message[len - 1] == '"') {
+                new_message[len - 1] = '\0';
+                memmove(new_message, new_message + 1, len - 1);
+            }
+
+            printf("EDIT_MESSAGE received: ID=%d, Message='%s'\n", message_id, new_message);
+
+            if (edit_message(db, message_id, new_message) == 0) {
+                const char *response = "OK";
+                write(client_sock, response, strlen(response));
+            } else {
+                const char *response = "ERROR";
+                write(client_sock, response, strlen(response));
+            }
+        } else {
+            fprintf(stderr, "Invalid EDIT_MESSAGE format: %s\n", arg1);
+            const char *response = "INVALID_FORMAT";
+            write(client_sock, response, strlen(response));
+        }
+    }
+
+
+    else if (strcmp(command, "GET_MESSAGES") == 0) {
         char result[BUFFER_SIZE * 10];
         if (get_messages(db, arg1, arg2, result, sizeof(result)) == 0) {
             write(client_sock, result, strlen(result));
