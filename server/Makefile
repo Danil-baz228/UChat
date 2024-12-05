@@ -1,27 +1,33 @@
 # Компилятор и флаги
 CC = gcc
-CFLAGS = -I./inc `pkg-config --cflags gtk+-3.0 gstreamer-1.0`
-LIBS = `pkg-config --libs gtk+-3.0 gstreamer-1.0`
+CFLAGS = -Wall -Wextra -Werror -std=c11
+LIBS = -lsqlite3 -lpthread -lssl -lcrypto
 
-# Исходники и объектные файлы
-SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c src/stickers.c
-OBJ = $(SRC:src/%.c=obj/%.o)
-OUT = uchat
+# Исходники, объектные файлы и исполняемый файл
+SRC = server.c
+OBJ = obj/server.o
+OUT = server_app
 
 # Сборка объектных файлов
-obj/%.o: src/%.c
+obj/%.o: %.c
 	@mkdir -p obj
+	@echo "Compiling $< -> $@"
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Сборка исполняемого файла
 $(OUT): $(OBJ)
+	@echo "Linking $(OBJ) -> $@"
 	$(CC) -o $(OUT) $(OBJ) $(LIBS)
 
 # Цель по умолчанию
 all: $(OUT)
 
+# Полная пересборка
+re: clean all
+
 # Очистка объектных файлов и исполняемого файла
 clean:
+	@echo "Cleaning up..."
 	rm -rf obj $(OUT)
 
-.PHONY: clean all
+.PHONY: clean all re

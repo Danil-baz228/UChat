@@ -14,8 +14,6 @@
 int client_sockets[MAX_CLIENTS];
 int client_count = 0;
 
-
-
 void broadcast_notification(const char *message, int exclude_sock) {
     for (int i = 0; i < client_count; i++) {
         if (client_sockets[i] != exclude_sock) { // Не отправляем уведомление отправителю

@@ -17,7 +17,7 @@ void on_register_clicked(GtkWidget *widget, gpointer data) {
     if (strlen(username) == 0 || strlen(password) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Имя пользователя и пароль не должны быть пустыми!");
+                                                   "Ім'я користувача та пароль не повинні бути порожніми!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
         return;
@@ -28,26 +28,26 @@ void on_register_clicked(GtkWidget *widget, gpointer data) {
         if (strcmp(response, "OK") == 0) {
             GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                        GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                                       "Регистрация прошла успешно!");
+                                                       "Реєстрація пройшла успішно!");
             gtk_dialog_run(GTK_DIALOG(dialog));
             gtk_widget_destroy(dialog);
         } else if (strcmp(response, "USER_EXISTS") == 0) {
             GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                       "Пользователь с таким именем уже существует!");
+                                                       "Користувач із таким ім'ям вже існує!");
             gtk_dialog_run(GTK_DIALOG(dialog));
             gtk_widget_destroy(dialog);
         } else {
             GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                       "Ошибка регистрации!");
+                                                       "Помилка реєстрації!");
             gtk_dialog_run(GTK_DIALOG(dialog));
             gtk_widget_destroy(dialog);
         }
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Ошибка подключения к серверу!");
+                                                   "Помилка підключення до сервера!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
@@ -64,7 +64,7 @@ void load_users_list(GtkWidget *users_list) {
     // Получение списка пользователей с сервера
     char response[1024];
     if (send_to_server("GET_USERS", "", "", "", response, sizeof(response)) != 0) {
-        fprintf(stderr, "Ошибка получения списка пользователей\n");
+        fprintf(stderr, "Помилка отримання списку користувачів\n");
         return;
     }
 
@@ -94,7 +94,7 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
     if (strlen(username) == 0 || strlen(password) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Имя пользователя и пароль не должны быть пустыми!");
+                                                   "Ім'я користувача та пароль не повинні бути порожніми!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
         return;
@@ -113,26 +113,26 @@ void on_login_clicked(GtkWidget *widget, gpointer data) {
         } else if (strcmp(response, "USER_NOT_FOUND") == 0) {
             GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                       "Пользователь с таким именем не найден!");
+                                                       "Користувача з таким ім'ям не знайдено!");
             gtk_dialog_run(GTK_DIALOG(dialog));
             gtk_widget_destroy(dialog);
         } else if (strcmp(response, "INVALID") == 0) {
             GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                       "Неверный пароль!");
+                                                       "Неправильний пароль!");
             gtk_dialog_run(GTK_DIALOG(dialog));
             gtk_widget_destroy(dialog);
         } else {
             GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                        GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                       "Ошибка входа. Попробуйте снова.");
+                                                       "Помилка входу. Спробуйте ще раз.");
             gtk_dialog_run(GTK_DIALOG(dialog));
             gtk_widget_destroy(dialog);
         }
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Ошибка подключения к серверу!");
+                                                   "Помилка підключення до сервера!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
@@ -158,12 +158,12 @@ void load_chat_messages(GtkWidget *chat_container, const char *current_user, con
             if (sscanf(line, "%d|%63[^|]|%63[^|]|%1023[^\n]", &message_id, sender, time, message) == 4) {
                 add_message_to_chat(chat_container, sender, time, message, message_id);
             } else {
-                fprintf(stderr, "Ошибка парсинга сообщения: %s\n", line);
+                fprintf(stderr, "Помилка парсингу повідомлення: %s\n", line);
             }
             line = strtok(NULL, "\n");
         }
     } else {
-        fprintf(stderr, "Ошибка получения сообщений с сервера.\n");
+        fprintf(stderr, "Помилка отримання повідомлень із сервера.\n");
     }
 }
 
@@ -195,7 +195,7 @@ void on_user_selected(GtkListBox *box, GtkListBoxRow *row, gpointer data) {
     const char *selected_user = gtk_label_get_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(row))));
     g_object_set_data(G_OBJECT(window), "selected_user", (gpointer)selected_user);
 
-    printf("Выбран пользователь: %s\n", selected_user);
+    printf("Вибраний користувач: %s\n", selected_user);
 
     // Загрузка сообщений для выбранного пользователя
     load_chat_messages(text_view, current_user, selected_user);
@@ -209,7 +209,7 @@ void on_search_clicked(GtkWidget *widget, gpointer data) {
     if (strlen(query) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Поле поиска не должно быть пустым!");
+                                                   "Поле пошуку повинно бути порожнім!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
         return;
@@ -219,13 +219,13 @@ void on_search_clicked(GtkWidget *widget, gpointer data) {
     if (send_to_server("SEARCH", query, "", "", response, sizeof(response)) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_INFO, GTK_BUTTONS_OK,
-                                                   "Найденные пользователи:\n%s", response);
+                                                   "Знайдені користувачі:\n%s", response);
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Ошибка поиска пользователей!");
+                                                   "Помилка пошуку користувачів!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }
@@ -241,7 +241,7 @@ void on_send_message_clicked(GtkWidget *widget, gpointer data) {
     if (!selected_user || strlen(selected_user) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Выберите пользователя для отправки сообщения.");
+                                                   "Виберіть користувача, щоб надіслати повідомлення.");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
         return;
@@ -252,7 +252,7 @@ void on_send_message_clicked(GtkWidget *widget, gpointer data) {
     if (strlen(message) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Сообщение не может быть пустым!");
+                                                   "Повідомлення не може бути порожнім!");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
         return;
@@ -266,7 +266,7 @@ void on_send_message_clicked(GtkWidget *widget, gpointer data) {
     } else {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                                   "Ошибка отправки сообщения.");
+                                                   "Помилка надсилання повідомлення.");
         gtk_dialog_run(GTK_DIALOG(dialog));
         gtk_widget_destroy(dialog);
     }

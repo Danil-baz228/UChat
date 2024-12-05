@@ -5,6 +5,8 @@
 #include <gio/gio.h>
 #include <gtk/gtk.h>
 
+extern const char *stickers[];
+
 extern char current_user[64];
 extern GtkTextBuffer *chat_buffer;
 static int chat_window_x = 0;
