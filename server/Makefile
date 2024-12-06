@@ -6,7 +6,7 @@ LIBS = -lsqlite3 -lpthread -lssl -lcrypto
 # Исходники, объектные файлы и исполняемый файл
 SRC = server.c
 OBJ = obj/server.o
-OUT = server_app
+OUT =  uchat_server
 
 # Сборка объектных файлов
 obj/%.o: %.c

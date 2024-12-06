@@ -1,5 +1,6 @@
 /// chat.c
 #include "../inc/client.h"
+#include "stickers.c"
 #include "style_chat.c"
 // Переменная для хранения буфера текстового виджета
 GtkTextBuffer *chat_buffer = NULL;
@@ -8,7 +9,6 @@ extern char current_language[3];
 
 // Объявление глобальной переменной
 GtkWidget *main_vertical_box;
-
 
 char current_language[3] = "UA"; // Start with Ukrainian
 
@@ -183,7 +183,7 @@ void create_chat_window() {
     GtkWidget *sticker_grid = gtk_grid_new();
     gtk_container_add(GTK_CONTAINER(sticker_scrolled_window), sticker_grid);
 
-    int num_stickers = num_stickers;
+    int num_stickers = sizeof(stickers) / sizeof(stickers[0]);
 
     for (int i = 0; i < num_stickers; i++) {
         GtkWidget *sticker_item_button = gtk_button_new_with_label(stickers[i]);
