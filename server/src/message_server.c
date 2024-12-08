@@ -5,6 +5,7 @@ int send_message(sqlite3 *db, const char *sender, const char *receiver, const ch
     sqlite3_stmt *stmt;
     int sender_id = -1, receiver_id = -1;
 
+
     // Получаем ID отправителя
     if (sqlite3_prepare_v2(db, sql_get_id, -1, &stmt, NULL) == SQLITE_OK) {
         sqlite3_bind_text(stmt, 1, sender, -1, SQLITE_STATIC);

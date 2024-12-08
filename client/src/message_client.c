@@ -9,6 +9,7 @@ void add_message_to_chat(GtkWidget *chat_container, const char *sender, const ch
     gtk_widget_set_margin_start(message_box, 10);
     gtk_widget_set_margin_end(message_box, 10);
 
+
     // Создаём метку с информацией о пользователе и времени
     char sender_and_time[128];
     snprintf(sender_and_time, sizeof(sender_and_time), "%s [%s]", sender, time);

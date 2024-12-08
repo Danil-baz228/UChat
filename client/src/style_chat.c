@@ -15,6 +15,7 @@ void set_chat_theme(GtkCssProvider *provider, const char *theme) {
     "listbox { background-color: #D8DEE9; color: #2E3440; border-radius: 5px; padding: 10px; margin-top: 10px; }"
     "listbox row:hover { background-color: #B2B9C0; }";
 
+
 const char *dark_css =
     "window { background-color: #2E3440; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }"
     "label { font-size: 16px; color: #D8DEE9; font-weight: bold; }"

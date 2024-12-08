@@ -10,6 +10,7 @@ void on_search_entry_changed(GtkSearchEntry *entry, gpointer user_data) {
         GtkWidget *row = GTK_WIDGET(l->data);
         const char *label_text = gtk_label_get_text(GTK_LABEL(gtk_bin_get_child(GTK_BIN(row))));
 
+
         // Показываем строку, если она содержит текст поиска, игнорируя регистр
         if (g_strrstr(g_ascii_strdown(label_text, -1), g_ascii_strdown(search_text, -1)) != NULL) {
             gtk_widget_show(row);

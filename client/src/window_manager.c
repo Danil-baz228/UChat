@@ -14,6 +14,7 @@ GtkWidget *get_main_window() {
     return main_window;
 }
 
+
 void set_chat_window(GtkWidget *window) {
     chat_window = window;
 }

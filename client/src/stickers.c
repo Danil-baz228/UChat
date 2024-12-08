@@ -35,6 +35,7 @@ void on_sticker_button_clicked(GtkButton *button, gpointer user_data) {
     gtk_popover_popup(GTK_POPOVER(popover)); // Открываем поповер
 }
 
+
 // Функция для обработки выбора стикера
 void on_sticker_selected(GtkButton *button, gpointer user_data) {
     GtkEntry *entry_message = GTK_ENTRY(user_data);

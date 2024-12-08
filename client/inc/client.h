@@ -10,6 +10,7 @@ extern GtkTextBuffer *chat_buffer;
 static int chat_window_x = 0;
 static int chat_window_y = 0;
 
+
 // Функции из chat.c
 void create_chat_window();
 void on_logout_clicked(GtkButton *button, gpointer user_data);

@@ -14,6 +14,7 @@ obj/%.o: src/%.c
 	@echo "Compiling $< -> $@"
 	$(CC) $(CFLAGS) -c $< -o $@
 
+
 # Сборка исполняемого файла
 $(OUT): $(OBJ)
 	@echo "Linking $(OBJ) -> $@"

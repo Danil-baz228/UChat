@@ -10,6 +10,7 @@ char current_language[3];
 // Объявление глобальной переменной
 GtkWidget *main_vertical_box;
 
+
 char current_language[3] = "UA"; // Start with Ukrainian
 
 void on_logout_clicked(GtkButton *button, gpointer user_data) {

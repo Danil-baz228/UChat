@@ -24,6 +24,7 @@ void broadcast_notification(const char *message, int exclude_sock) {
     }
 }
 
+
 // Функция для обработки ошибок SQLite
 void check_sqlite_error(int rc, const char *message, sqlite3 *db) {
     if (rc != SQLITE_OK) {

@@ -14,6 +14,7 @@ void on_register_clicked(GtkWidget *widget, gpointer data) {
     const char *username = gtk_entry_get_text(GTK_ENTRY(entries[0]));
     const char *password = gtk_entry_get_text(GTK_ENTRY(entries[1]));
 
+
     if (strlen(username) == 0 || strlen(password) == 0) {
         GtkWidget *dialog = gtk_message_dialog_new(NULL, GTK_DIALOG_DESTROY_WITH_PARENT,
                                                    GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,

@@ -15,6 +15,7 @@ void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data) {
 }
 
 
+
 void on_about_clicked(GtkMenuItem *menuitem, gpointer user_data) {
     GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(user_data),
                                                GTK_DIALOG_DESTROY_WITH_PARENT,

@@ -8,6 +8,7 @@ SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c src/search.c s
 OBJ = $(SRC:src/%.c=obj/%.o)
 OUT = uchat
 
+
 # Сборка объектных файлов
 obj/%.o: src/%.c
 	@mkdir -p obj

@@ -9,6 +9,7 @@ int register_user(sqlite3 *db, const char *username, const char *password) {
     char hashed_password[65]; // 64 символа + \0
     hash_password(password, hashed_password, sizeof(hashed_password));
 
+
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
     if (rc != SQLITE_OK) {
         fprintf(stderr, "Error preparing statement: %s\n", sqlite3_errmsg(db));

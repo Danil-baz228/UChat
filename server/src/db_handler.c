@@ -8,6 +8,7 @@ void check_sqlite_error(int rc, const char *message, sqlite3 *db) {
     }
 }
 
+
 int get_all_users(sqlite3 *db, char *result, size_t result_size) {
     const char *sql = "SELECT username FROM users;";
     sqlite3_stmt *stmt;

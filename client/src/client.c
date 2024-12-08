@@ -17,6 +17,7 @@ int send_to_server(const char *command, const char *arg1, const char *arg2, cons
         return -1;
     }
 
+
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         perror("Socket creation failed");

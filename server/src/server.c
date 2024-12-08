@@ -13,6 +13,7 @@ void broadcast_notification(const char *message, int exclude_sock) {
     }
 }
 
+
 // Функция для хеширования пароля
 void hash_password(const char *password, char *hashed_password, size_t hashed_password_size) {
     unsigned char hash[SHA256_DIGEST_LENGTH];
