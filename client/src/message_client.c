@@ -112,7 +112,7 @@ void on_edit_message_clicked(GtkButton *button, gpointer user_data) {
             char server_response[256];  // Переименована переменная для избежания конфликта
             if (send_to_server("EDIT_MESSAGE", g_strdup_printf("%d|\"%s\"", message_id, new_message), "", "", server_response, sizeof(server_response)) == 0) {
                 if (strcmp(server_response, "OK") == 0) {
-                    printf("Сообщение успешно обновлено\n");
+
                     // Обновление UI
                     load_chat_messages(
                         g_object_get_data(G_OBJECT(parent_window), "chat_container"),
