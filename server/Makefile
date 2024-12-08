@@ -4,12 +4,12 @@ CFLAGS = -Wall -Wextra -Werror -std=c11
 LIBS = -lsqlite3 -lpthread -lssl -lcrypto
 
 # Исходники, объектные файлы и исполняемый файл
-SRC = server.c
-OBJ = obj/server.o
-OUT =  uchat_server
+SRC = src/authenticate.c src/server.c src/message_server.c src/db_handler.c
+OBJ = $(SRC:src/%.c=obj/%.o)
+OUT = uchat_server
 
 # Сборка объектных файлов
-obj/%.o: %.c
+obj/%.o: src/%.c
 	@mkdir -p obj
 	@echo "Compiling $< -> $@"
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -31,3 +31,4 @@ clean:
 	rm -rf obj $(OUT)
 
 .PHONY: clean all re
+

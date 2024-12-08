@@ -4,7 +4,7 @@ CFLAGS = -I./inc `pkg-config --cflags gtk+-3.0 gstreamer-1.0`
 LIBS = `pkg-config --libs gtk+-3.0 gstreamer-1.0`
 
 # Исходники и объектные файлы
-SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c
+SRC = src/client.c src/handlers.c src/chat.c src/window_manager.c src/search.c src/settings.c src/message_client.c
 OBJ = $(SRC:src/%.c=obj/%.o)
 OUT = uchat
 

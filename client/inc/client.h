@@ -52,9 +52,18 @@ void set_chat_window(GtkWidget *window);
 void set_sticker_window(GtkWidget *window);
 
 void add_search_bar(GtkWidget *main_vertical_box, GtkWidget *users_list);
+void on_search_entry_changed(GtkSearchEntry *entry, gpointer user_data);
 
 void create_login_window();
 void close_registration_window(GtkWidget *window);
+
+void on_switch_language_clicked(GtkMenuItem *menuitem, gpointer user_data);
+void on_about_clicked(GtkMenuItem *menuitem, gpointer user_data);
+void update_text_labels(gpointer user_data);
+
+void add_message_to_chat(GtkWidget *chat_container, const char *sender, const char *time, const char *message, int message_id);
+void on_delete_message_clicked(GtkButton *button, gpointer user_data);
+void on_edit_message_clicked(GtkButton *button, gpointer user_data);
 
 #endif // CLIENT_H
 
